@@ -1,36 +1,25 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Switch } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Switch, SafeAreaView } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { AppContext } from '../../context/AppContext';
 import { getProfileInfo } from '../services/authServices';
 import { useNavigation, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import QRModal from '../components/QRModal';
-import HeaderComponent from '../components/HeaderComponent';
-import moment from 'moment';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Loader from '../components/Loader';
-import Constants from 'expo-constants';
-
-const { width, height } = Dimensions.get('window');
-
-const scaleWidth = (size) => (width / 375) * size;
-const scaleHeight = (size) => (height / 812) * size;
+import Header from '../components/Header';
 
 const ProfileScreen = () => {
   const { logout } = useContext(AppContext);
   const [profile, setProfile] = useState({});
   const [userPin, setUserPin] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isBiometricModalVisible, setIsBiometricModalVisible] = useState(false); // New state for biometric modal
+  const [isBiometricModalVisible, setIsBiometricModalVisible] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [pendingBiometricValue, setPendingBiometricValue] = useState(null);
 
   const router = useRouter();
   const navigation = useNavigation();
-
-  const appVersion = Constants.expoConfig?.version || '0.0.1';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -39,20 +28,16 @@ const ProfileScreen = () => {
         const res = await getProfileInfo();
         setProfile(res?.data[0]);
         await AsyncStorage.setItem('profilename', res?.data[0].name);
-        
       } catch (error) {
         console.error('Failed to fetch profile:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
-  // Load user pin and biometric setting from AsyncStorage
     const fetchUserData = async () => {
       try {
         const storedPin = await AsyncStorage.getItem('userPin');
         setUserPin(storedPin);
-
         const biometric = await AsyncStorage.getItem('userBiometric');
         setBiometricEnabled(biometric === 'true');
       } catch (error) {
@@ -65,15 +50,11 @@ const ProfileScreen = () => {
 
   const handleBackPress = () => navigation.goBack();
   const handlePressPassword = () => router.push({ pathname: 'ResetPassword' });
-  const handleQRPress = () => setIsModalVisible(true);
-  const handleCloseModal = () => setIsModalVisible(false);
 
-    const handleBiometricToggle = (value) => {
-    setPendingBiometricValue(value); // Store the intended toggle value
-    setIsBiometricModalVisible(true); // Show confirmation modal
+  const handleBiometricToggle = (value) => {
+    setPendingBiometricValue(value);
+    setIsBiometricModalVisible(true);
   };
-
-    // Confirm biometric toggle
   const confirmBiometricToggle = async () => {
     try {
       setBiometricEnabled(pendingBiometricValue);
@@ -84,123 +65,75 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       console.error('Error updating biometric setting:', error);
-      setBiometricEnabled(!pendingBiometricValue); // Revert on error
-      setError({ visible: true, message: 'Failed to update biometric setting' });
+      setBiometricEnabled(!pendingBiometricValue);
     } finally {
       setIsBiometricModalVisible(false);
       setPendingBiometricValue(null);
     }
   };
-
-  // Cancel biometric toggle
   const cancelBiometricToggle = () => {
     setIsBiometricModalVisible(false);
     setPendingBiometricValue(null);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not available';
-    return moment(dateString, 'DD-MMM-YYYY').format('MMMM Do, YYYY');
-  };
-
-  // Handle image loading errors
   const handleImageError = () => {
-    return require('../../assets/images/default-profile.jpg'); // Make sure you have this asset
+    return require('../../assets/images/default-profile.jpg');
   };
-
-  // console.log("Profile==",profile)
 
   return (
-    <>
-      <HeaderComponent headerTitle="Employee Profile" onBackPress={handleBackPress} />
+    <SafeAreaView style={styles.screen}>
+      {/* Header */}
+      <Header title="Profile" onBack={handleBackPress} />
       {isLoading ? (
         <Loader visible={isLoading} />
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.container}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Profile Header */}
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarContainer}>
+        <View style={{flex: 1}}>
+          <ScrollView contentContainerStyle={{ ...styles.container, flexGrow: 1, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+            {/* Profile Section */}
+            <View style={styles.profileSection}>
               <Image
                 source={profile?.image ? { uri: profile.image } : require('../../assets/images/default-profile.jpg')}
-                style={styles.profileImage}
+                style={styles.avatar}
                 onError={handleImageError}
                 defaultSource={require('../../assets/images/default-profile.jpg')}
               />
+              <Text style={styles.name}>{profile?.name || 'Dr. Nitin Menon'}</Text>
+              <Text style={styles.designation}>{profile?.grade_name || 'Cardiologist'}</Text>
+              <Text style={styles.hospital}>{profile?.department_name || 'City General Hospital'}</Text>
             </View>
-            <View style={styles.profileTitle}>
-              <Text style={styles.userName}>{profile?.name || 'Employee Name'}</Text>
-              <Text style={styles.userPosition}>{profile?.grade_name || 'Position'}</Text>
+
+            {/* Settings Section */}
+            <Text style={styles.settingsTitle}>Settings</Text>
+            <View style={styles.settingsList}>
+              <SettingsItem
+                icon={<MaterialIcons name="notifications" size={22} color="#4A6FA5" />}
+                label="Notifications"
+                onPress={() => {}}
+              />
+              <SettingsItem
+                icon={<MaterialIcons name="lock" size={22} color="#4A6FA5" />}
+                label="Change Password"
+                onPress={handlePressPassword}
+              />
+              <SettingsItem
+                icon={<MaterialIcons name="logout" size={22} color="#e74c3c" />}
+                label="Logout"
+                onPress={async () => {
+                  await AsyncStorage.removeItem('authToken');
+                  logout();
+                }}
+                labelStyle={{ color: '#e74c3c' }}
+              />
             </View>
-          </View>
 
-          {/* QR Button */}
-          <TouchableOpacity style={styles.qrButton} onPress={handleQRPress}>
-            <MaterialIcons name="qr-code" size={24} color="#2c3e50" />
-          </TouchableOpacity>
-
-          {/* Employee Details Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>EMPLOYEE DETAILS</Text>
-            
-            <InfoRow 
-              icon="badge" 
-              label="Employee ID" 
-              value={profile?.emp_id} 
-            />
-            <InfoRow 
-              icon="business" 
-              label="Department" 
-              value={profile?.department_name} 
-            />
-            <InfoRow 
-              icon="date-range" 
-              label="Date of Joining" 
-              value={formatDate(profile?.date_of_join)} 
-            />
-
-          </View>
-
-          {/* Contact Information Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>CONTACT INFORMATION</Text>
-            
-            <InfoRow 
-              icon="mail" 
-              label="Email" 
-              value={profile?.email_id} 
-            />
-            <InfoRow 
-              icon="phone" 
-              label="Mobile" 
-              value={profile?.mobile_number || 'Not available'} 
-            />
-          </View>
-
-          {/* Leave Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>LEAVE INFORMATION</Text>
-            <InfoRow 
-              icon="event-available" 
-              label="Available Leaves" 
-              value={profile?.max_no_leave} 
-            />
-          </View>
-
-          {/* Action Buttons */}
-
+            {/* Biometric Authentication */}
             <View style={styles.optionItem}>
               <View style={styles.optionIconContainer}>
                 <MaterialIcons name="fingerprint" size={22} color="#4A6FA5" />
               </View>
               <View style={styles.optionTextContainer}>
                 <Text style={styles.optionText}>Biometric Authentication</Text>
-                <Text style={styles.optionDescription}>
-                  Use fingerprint to log in
-                </Text>
+                <Text style={styles.optionDescription}>Use fingerprint to log in</Text>
               </View>
               <Switch
                 value={biometricEnabled}
@@ -209,210 +142,123 @@ const ProfileScreen = () => {
                 thumbColor={biometricEnabled ? "#fff" : "#FFFFFF"}
               />
             </View>
-
-          <View style={styles.actionContainer}>
-
-            <TouchableOpacity 
+            <ConfirmationModal
+              visible={isBiometricModalVisible}
+              message={`Are you sure you want to ${pendingBiometricValue ? 'enable' : 'disable'} biometric authentication?`}
+              onConfirm={confirmBiometricToggle}
+              onCancel={cancelBiometricToggle}
+              confirmText={pendingBiometricValue ? 'Enable' : 'Disable'}
+              cancelText="Cancel"
+            />
+          </ScrollView>
+          <View style={styles.footerButtonContainer}>
+            <TouchableOpacity
               style={[styles.actionButton, styles.primaryButton]}
               onPress={handlePressPassword}
             >
               <MaterialIcons name="lock" size={20} color="#fff" />
               <Text style={styles.buttonText}>{userPin ? 'UPDATE SECURITY PIN' : 'SET SECURITY PIN'}</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.secondaryButton]}
-              onPress={async () => {
-                // await AsyncStorage.removeItem('userPin');
-                await AsyncStorage.removeItem('authToken');
-                logout();
-              }}
-            >
-              <MaterialIcons name="logout" size={20} color="#e74c3c" />
-              <Text style={[styles.buttonText, styles.logoutText]}>LOGOUT</Text>
-            </TouchableOpacity>
           </View>
-
-            <View style={styles.fixedFooter}>
-              <Text>Version Code: {appVersion}</Text>
-            </View>
-
-          {/* QR Modal */}
-          <QRModal
-            isVisible={isModalVisible}
-            onClose={handleCloseModal}
-            qrValue={profile?.emp_id || 'EMP-007'}
-          />
-
-          <ConfirmationModal
-        visible={isBiometricModalVisible}
-        message={`Are you sure you want to ${
-          pendingBiometricValue ? 'enable' : 'disable'
-        } biometric authentication?`}
-        onConfirm={confirmBiometricToggle}
-        onCancel={cancelBiometricToggle}
-        confirmText={pendingBiometricValue ? 'Enable' : 'Disable'}
-        cancelText="Cancel"
-      />
-        </ScrollView>
+        </View>
       )}
-    </>
+    </SafeAreaView>
   );
 };
 
-const InfoRow = ({ icon, label, value }) => (
-  <View style={styles.infoRow}>
-    <MaterialIcons name={icon} size={20} color="#7f8c8d" style={styles.infoIcon} />
-    <View style={styles.infoContent}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  </View>
+const SettingsItem = ({ icon, label, onPress, labelStyle }) => (
+  <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
+    <View style={styles.settingsIcon}>{icon}</View>
+    <Text style={[styles.settingsLabel, labelStyle]}>{label}</Text>
+    <MaterialIcons name="chevron-right" size={22} color="#b0b0b0" />
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#ecf0f1',
-    paddingBottom: 30,
-  },
-  profileHeader: {
-    backgroundColor: '#fff',
-    padding: 25,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-  },
-  profileTitle: {
-    alignItems: 'center',
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  userPosition: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    fontWeight: '500',
-  },
-  qrButton: {
-    position: 'absolute',
-    top: 30,
-    right: 20,
-    backgroundColor: '#fff',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 0,
-    marginVertical: 8,
-    marginHorizontal: 0,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#95a5a6',
-    marginBottom: 15,
-    letterSpacing: 1,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  infoIcon: {
-    marginRight: 15,
-    width: 24,
-    textAlign: 'center',
-  },
-  infoContent: {
+  screen: {
     flex: 1,
+    backgroundColor: '#fff',
+    position: 'relative',
   },
-  infoLabel: {
-    fontSize: 13,
-    color: '#95a5a6',
-    marginBottom: 3,
+  container: {
+    flex: 1,
+    paddingBottom: 20,
   },
-  infoValue: {
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginBottom: 10,
+  },
+  avatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#e6e6e6',
+    marginBottom: 16,
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#222',
+    marginBottom: 4,
+  },
+  designation: {
     fontSize: 16,
-    color: '#34495e',
+    color: '#4A6FA5',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  hospital: {
+    fontSize: 15,
+    color: '#8e99a3',
+    fontWeight: '400',
+  },
+  settingsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#222',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  settingsList: {
+    marginBottom: 0,
+    paddingHorizontal: 16,
+  },
+  settingsItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#f7f7f7',
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  settingsIcon: {
+    width: 36,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  settingsLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: '#222',
     fontWeight: '500',
   },
-  actionContainer: {
-    padding: 20,
-  },
-  actionButton: {
+  optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-    borderRadius: 4,
-    marginBottom: 15,
-  },
-  primaryButton: {
-    backgroundColor: '#3498db',
-  },
-  secondaryButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e74c3c',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    marginLeft: 10,
-    fontSize: 15,
-  },
-  logoutText: {
-    color: '#e74c3c',
-  },
-
-   optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: '#f7f7f7',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    marginTop: 0,
   },
   optionIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF" ,
-    justifyContent: 'center',
+    width: 36,
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 8,
   },
   optionTextContainer: {
     flex: 1,
@@ -420,36 +266,33 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 15,
     fontWeight: '500',
-    color: "#000",
+    color: '#222',
   },
   optionDescription: {
     fontSize: 12,
     color: '#95a5a6',
     marginTop: 2,
   },
-  optionDivider: {
-    height: 1,
-    // backgroundColor: colors.muted,
-    marginLeft: 68,
+  footerButtonContainer: {
+    paddingBottom: 24,
+    paddingTop: 8,
+    backgroundColor: '#fff',
   },
-    fixedFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: scaleHeight(10),
+  actionButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
-    width: '100%',
+    padding: 15,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    backgroundColor: '#0366d6',
   },
-  footerText: {
-    color: "#333",
-    fontSize: scaleWidth(14),
-    fontWeight: '500',
-  }
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 10,
+    fontSize: 15,
+  },
 });
 
 export default ProfileScreen;

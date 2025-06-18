@@ -13,7 +13,10 @@ import {
     Dimensions,
     StatusBar,
     Image,
-    SafeAreaView
+    SafeAreaView,
+    Platform,
+    Keyboard,
+    ScrollView
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import Logos from '../../assets/images/Atom_walk_logo.jpg'
@@ -24,6 +27,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ConfirmationModal from '../../src/components/ConfirmationModal';
 import Constants from 'expo-constants';
 import Loader from '../../src/components/Loader';
+import StatusBarComponent from '../../src/components/StatusBar';
 
 const { width, height } = Dimensions.get('window');
 
@@ -158,11 +162,11 @@ const AuthScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#4A6FA5" barStyle="light-content" />
+            <StatusBarComponent />
             
             {/* Bank Logo Area */}
             <LinearGradient
-                colors={['#4A6FA5', '#6B8CBE']}
+                colors={['#0366d6', '#0366d6']}
                 style={styles.header}
             >
                 <View style={styles.logoContainer}>
@@ -174,7 +178,7 @@ const AuthScreen = () => {
                     </View>
                     )}
                 </View>
-                <Text style={styles.welcomeText}>Welcome to ATOMWALK HRM</Text>
+                <Text style={styles.welcomeText}>Welcome to ATOMWALK Doctor App</Text>
                 {userName && (
                     <View style={styles.userInfoContainer}>
                         <Icon name="person-circle-outline" size={24} color="#fff" />
@@ -220,7 +224,7 @@ const AuthScreen = () => {
                             style={styles.forgotContainer}
                         // onPress={openPopup}
                         >
-                            <Icon name="log-out-outline" size={16} color="#4A6FA5" />
+                            <Icon name="log-out-outline" size={16} color="#0366d6" />
                             <Text style={styles.forgotText}>Logout</Text>
                         </TouchableOpacity>
                     </View>
@@ -277,7 +281,7 @@ const AuthScreen = () => {
                                 styles.submitButton,
                                 value.length < 4  && {
                                     backgroundColor: '#fff',
-                                    borderColor: '#4d88ff',
+                                    borderColor: '#0366d6',
                                     borderWidth: 1,
                                     shadowColor: 'transparent',
                                     elevation: 0,
@@ -299,7 +303,7 @@ const AuthScreen = () => {
                                 style={styles.backButton}
                                 onPress={() => setShowPinInput(false)}
                             >
-                                <Icon name="arrow-back-outline" size={16} color="#4A6FA5" style={styles.backIcon} />
+                                <Icon name="arrow-back-outline" size={16} color="#0366d6" style={styles.backIcon} />
                                 <Text style={styles.backButtonText}>Back to Login Options</Text>
                             </TouchableOpacity>
                         )}
@@ -320,7 +324,7 @@ const AuthScreen = () => {
                                 checkNetworkAndAuthenticate();
                             }}
                         >
-                            <Icon name="finger-print" size={80} color="#4A6FA5" />
+                            <Icon name="finger-print" size={80} color="#0366d6" />
                         </TouchableOpacity>
 
                         <Text style={styles.fingerprintHint}>
@@ -330,7 +334,7 @@ const AuthScreen = () => {
                             style={styles.backButton}
                             onPress={() => setShowFingerprint(false)}
                         >
-                            <Icon name="arrow-back-outline" size={16} color="#4A6FA5" style={styles.backIcon} />
+                            <Icon name="arrow-back-outline" size={16} color="#0366d6" style={styles.backIcon} />
                             <Text style={styles.backButtonText}>Back to Login Options</Text>
                         </TouchableOpacity>
 
@@ -393,7 +397,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F5F5F5',
     },
     header: {
-        paddingTop: 100,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         paddingBottom: 30,
         paddingHorizontal: 20,
         borderBottomLeftRadius: 20,
@@ -535,7 +539,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     submitButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#0366d6',
         paddingVertical: 15,
         paddingHorizontal: 50,
         borderRadius: 8,
@@ -560,7 +564,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     forgotText: {
-        color: '#4A6FA5',
+        color: '#0366d6',
         marginLeft: 5,
         fontWeight: '500',
     },
@@ -584,10 +588,11 @@ const styles = StyleSheet.create({
     },
     backIcon: {
         marginRight: 5,
+        color: '#0366d6',
     },
     backButtonText: {
-        color: '#4A6FA5',
-        fontSize: 14,
+        color: '#0366d6',
+        fontSize: 16,
         fontWeight: '500',
     },
     footer: {

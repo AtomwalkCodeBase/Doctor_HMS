@@ -4,17 +4,12 @@ const getDbName = async (path) => {
   let dbData = await AsyncStorage.getItem('dbName');
   return dbData
 };
-// const localhost = "https://www.atomwalk.com"
 const localhost = "https://crm.atomwalk.com"
-
+const oldlocalhost = "https://www.atomwalk.com"
 const apiURL = "/api";
 const newApiURL = "/hr_api"
-const db_name = getDbName();
-// console.log('Dbbvjkdvnc',db_name)
-export const endpoint = `${localhost}${apiURL}`;
+export const endpoint = `${oldlocalhost}${apiURL}`;
 export const newEndpoint = `${localhost}${newApiURL}`;
-
-
 
 export const companyInfoURL = async () => {
   const db_name = await getDbName();
@@ -58,4 +53,7 @@ export const forgetEmpPinURL =  async () => {
   return `${newEndpoint}/emp_forget_pin/${db_name}/`;
 }
 
-  
+export const getbookedList = async () => {
+  const db_name = await getDbName();
+  return `${endpoint}/get_facility_booking_list/${db_name}/`;
+}

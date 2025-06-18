@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Animated, E
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { MaterialIcons } from '@expo/vector-icons';
-// import { setUserPinView } from '../services/productServices';
 import { colors } from '../Styles/appStyle';
 import { setUserPinView } from '../services/productServices';
 import HeaderComponent from '../components/HeaderComponent';

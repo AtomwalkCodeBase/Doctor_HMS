@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getActivities, userTaskListURL, empLoginURL, updateTaskURL, setUserPinURL, forgetEmpPinURL } from "../services/ConstantServies";
+import { getActivities, userTaskListURL, empLoginURL, updateTaskURL, setUserPinURL, forgetEmpPinURL, getbookedList } from "../services/ConstantServies";
 import { authAxios, authAxiosPost, publicAxiosRequest } from "./HttpMethod";
 
 export async function getUserTasks(task_type, customer_id, lead_id) {
@@ -79,4 +79,10 @@ export async function forgetUserPinView(data) {
     console.log("Data to be sent--->", data);
     const url = await forgetEmpPinURL();
     return publicAxiosRequest.post(url, data);
+}
+
+export async function getbookedlistview() {
+  const url = await getbookedList(); 
+  // let data = payload;
+  return authAxios(url);
 }
