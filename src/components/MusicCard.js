@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import OutlinedButton from './OutlinedButton';
 
 function formatDateDMY(date) {
@@ -29,7 +29,18 @@ const MusicCard = ({
       resizeMode="cover"
     />
     <View style={styles.detailsContainer}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{title}</Text>
+        {buttonText && buttonText.toLowerCase() === 'remove' && (
+          <TouchableOpacity
+            style={styles.removeChip}
+            onPress={onButtonPress}
+            disabled={disabled}
+          >
+            <Text style={styles.removeChipText}>{buttonText}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       {(startDate || endDate) && (
         <View style={styles.row}>
@@ -50,10 +61,15 @@ const MusicCard = ({
           <Text style={styles.instructions}>{instructions}</Text>
         </View>
       )}
-      {buttonText && (
-        <OutlinedButton style={[styles.button, buttonStyle]} onPress={onButtonPress} disabled={disabled}>
-          {buttonText}
-        </OutlinedButton>
+      {/* Select button at the bottom, right-aligned */}
+      {buttonText && buttonText.toLowerCase() !== 'remove' && (
+        <TouchableOpacity
+          style={[styles.selectChip, { alignSelf: 'flex-end', marginTop: 12 }]}
+          onPress={onButtonPress}
+          disabled={disabled}
+        >
+          <Text style={styles.selectChipText}>{buttonText}</Text>
+        </TouchableOpacity>
       )}
     </View>
   </View>
@@ -103,11 +119,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#888',
     marginRight: 2,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   detailValue: {
-    fontSize: 15,
-    color: '#222',
+    fontSize: 13,
+    color: '#888',
     marginRight: 10,
     fontWeight: '500',
   },
@@ -136,12 +152,36 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '400',
   },
-  button: {
-    alignSelf: 'flex-start',
-    marginTop: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  removeChip: {
+    backgroundColor: '#fde8e8',
     borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginLeft: 8,
+  },
+  removeChipText: {
+    color: '#e53935',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  selectChip: {
+    backgroundColor: '#e6f0fa',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginLeft: 8,
+    alignSelf: 'flex-start',
+  },
+  selectChipText: {
+    color: '#0366d6',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });
 

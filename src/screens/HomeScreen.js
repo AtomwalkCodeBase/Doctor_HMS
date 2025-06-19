@@ -5,7 +5,10 @@ import AppointmentCard from '../components/AppointmentCard';
 import CustomStatusBar from '../components/StatusBar';
 import { Ionicons } from '@expo/vector-icons';
 import { getbookedlistview } from '../services/productServices';
+import { getProfileInfo } from '../services/authServices';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Drawer from '../components/Drawer';
 
 const defaultAvatar = require('../../assets/images/UserIcon.png');
 
@@ -14,10 +17,35 @@ const HomeScreen = () => {
   const [search, setSearch] = useState('');
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
+        // First try to get employee name from AsyncStorage
+        let employeeName = await AsyncStorage.getItem('profilename');
+        
+        // If not in AsyncStorage, try to fetch from API
+        if (!employeeName) {
+          try {
+            const profileResponse = await getProfileInfo();
+            employeeName = profileResponse?.data?.[0]?.name;
+            
+            // If we got the name from API, store it
+            if (employeeName) {
+              await AsyncStorage.setItem('profilename', employeeName);
+            }
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+          }
+        }
+        
+        if (!employeeName) {
+          console.error('Could not get employee name');
+          setLoading(false);
+          return;
+        }
+
         const response = await getbookedlistview(false);
         let bookings = response.data || response || [];
         if (!Array.isArray(bookings) && Array.isArray(response)) {
@@ -37,8 +65,8 @@ const HomeScreen = () => {
             return false;
           }
 
-          // Check if equipment ID is 9 and booking date matches today
-          return item.equipment_data.id === 8 && item.booking_date === todayString;
+          // Check if equipment name matches employee name and booking date matches today
+          return item.equipment_data.name === employeeName && item.booking_date === todayString;
         });
 
         const mapped = filtered.map(item => ({
@@ -114,12 +142,21 @@ const HomeScreen = () => {
     });
   };
 
+  const handleDrawerNavigate = (screen) => {
+    setDrawerVisible(false);
+    setTimeout(() => {
+      if (screen === 'home') router.push('/home');
+      else if (screen === 'profile') router.push('/profile');
+      else if (screen === 'inpatients') router.push('/inpatients');
+    }, 250);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <CustomStatusBar />
       <View style={styles.blueHeader}>
         <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.menuButton} onPress={() => {}}>
+          <TouchableOpacity style={styles.menuButton} onPress={() => setDrawerVisible(true)}>
             <Ionicons name="menu" size={28} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Doctor App</Text>
@@ -164,6 +201,11 @@ const HomeScreen = () => {
         )}
         <View style={{ height: 80 }} />
       </ScrollView>
+      <Drawer
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+        onNavigate={handleDrawerNavigate}
+      />
     </SafeAreaView>
   );
 };
@@ -182,6 +224,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'flex-start',
     flex: 0,
+    borderBottomLeftRadius: 27,
+    borderBottomRightRadius: 27,
   },
   headerRow: {
     flexDirection: 'row',

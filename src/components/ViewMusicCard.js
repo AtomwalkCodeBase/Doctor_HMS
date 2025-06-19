@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
   cardDetailText: {
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 11,
     color: '#666',
   },
   removeButtonOutlined: {

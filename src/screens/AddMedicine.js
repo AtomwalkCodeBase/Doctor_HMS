@@ -207,7 +207,7 @@ const AddMedicine = () => {
           {/* Important Note */}
           <Text style={[styles.label, styles.sectionSpacing]}>Important Note</Text>
           <TextInput
-            style={[styles.noteInput, { height: 180 }]}
+            style={[styles.noteInput, { height: 200 }]}
             placeholder="Type Here"
             value={note}
             onChangeText={setNote}
@@ -215,11 +215,11 @@ const AddMedicine = () => {
             multiline
           />
           {/* Add Another Medicine Button */}
-          <TouchableOpacity style={[styles.addAnotherBtn, { marginTop: 12 }]} onPress={handleAddAnother}> 
+          <TouchableOpacity style={[styles.addAnotherBtn, { marginTop: 18 }]} onPress={handleAddAnother}> 
             <Text style={styles.addAnotherText}>Add Another Medicine</Text>
           </TouchableOpacity>
           {/* Create Button */}
-          <TouchableOpacity style={[styles.createBtn, { marginTop: 12 }]} onPress={handleCreate}> 
+          <TouchableOpacity style={[styles.createBtn, { marginTop: 14 }]} onPress={handleCreate}> 
             <Text style={styles.createBtnText}>Create</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -239,6 +239,7 @@ const AddMedicine = () => {
             onDone={() => router.push('/PatientList')}
             addAnotherText="Add Another"
             doneText="Done"
+            style={{ marginBottom: 18 }}
           />
         </View>
       )}
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: '#fff',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 24,
   },
   addAnotherText: {
     color: '#0366d6',
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 24,
     width: '100%',
   },
   createBtnText: {
