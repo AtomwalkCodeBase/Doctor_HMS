@@ -18,6 +18,8 @@ export default function RootLayout() {
       <Stack.Screen name="AddTask/medicine" options={{headerShown:false}}/>
       <Stack.Screen name="AddTask/music" options={{headerShown:false}}/>
       <Stack.Screen name="AddTask/exercise" options={{headerShown:false}}/>
+      <Stack.Screen name="InPatientDetails/index" options={{headerShown:false}}/>
+      
 
     </Stack>
     </AppProvider>

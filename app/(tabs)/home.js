@@ -9,7 +9,7 @@ const Home = () => {
     <SafeAreaView style={{ flex: 1 }}>
       <HomeScreen />
       <FingerPopup />
-      <StatusBar style="auto" />
+      {/* <StatusBar style="auto" /> */}
     </SafeAreaView>
   );
 };

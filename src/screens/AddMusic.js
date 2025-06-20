@@ -12,6 +12,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import MusicCard from '../components/MusicCard';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import CollapsibleConfigSection from '../components/CollapsibleConfigSection';
+import ConfigSectionStyles from '../components/ConfigSectionStyles';
 
 const MUSIC_LIST = [
   { id: 1, title: 'Serene Melodies', image: null },
@@ -23,6 +25,9 @@ const MUSIC_LIST = [
 ];
 
 const MED_TIMES = ['Morning', 'Noon', 'Evening', 'Night'];
+
+const REPEAT_OPTIONS = ['Daily', 'Weekly'];
+const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function formatDateDMY(date) {
   if (!date) return '';
@@ -49,6 +54,11 @@ const AddMusic = () => {
   const configAnim = useRef(new Animated.Value(0)).current;
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [repeatType, setRepeatType] = useState('Daily');
+  const [numDays, setNumDays] = useState(1);
+  const [numWeeks, setNumWeeks] = useState(1);
+  const [selectedWeekDays, setSelectedWeekDays] = useState([]);
+  const [showRepeatDropdown, setShowRepeatDropdown] = useState(false);
 
   const expandConfig = () => {
     if (!configExpanded) {
@@ -71,6 +81,8 @@ const AddMusic = () => {
     }).start();
     setConfigExpanded(!configExpanded);
   };
+
+  const configSectionHeight = repeatType === 'Weekly' ? 585 : 500;
 
   return (
     <View style={{ flex: 1 }}>
@@ -124,80 +136,63 @@ const AddMusic = () => {
           </View>
           {/* Bottom collapsible config section */}
           {configExpanded ? (
-            <View style={styles.bottomConfigContainer}>
-              <TouchableOpacity style={styles.configToggle} onPress={toggleConfig} activeOpacity={0.7}>
-                <Text style={styles.configToggleText}>
-                  ▼ Configure Selected Music
-                </Text>
-              </TouchableOpacity>
-              <Animated.View style={{
-                overflow: 'hidden',
-                height: configAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, CONFIG_SECTION_HEIGHT],
-                }),
-                opacity: configAnim,
-              }}>
-                <View style={styles.configSection}>
-                  <View style={[styles.rowBetween, { marginTop: 16 }]}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={styles.label}>Start Date</Text>
-                      <TouchableOpacity onPress={() => setShowStartPicker(true)}>
-                        <View style={styles.dateInputRow}>
-                          <Ionicons name="calendar-outline" size={18} color="#0366d6" />
-                          <Text style={styles.dateInput}>{startDate ? formatDateDMY(startDate) : 'D/M/YYYY'}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text style={styles.label}>End Date</Text>
-                      <TouchableOpacity onPress={() => setShowEndPicker(true)}>
-                        <View style={styles.dateInputRow}>
-                          <Ionicons name="calendar-outline" size={18} color="#0366d6" />
-                          <Text style={styles.dateInput}>{endDate ? formatDateDMY(endDate) : 'D/M/YYYY'}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  <FormLabel style={{ marginTop: 16 }}>Medication Time</FormLabel>
-                  <MultiSelectButtonGroup options={MED_TIMES} selected={medTimes} onSelect={(time) => {
-                    setMedTimes((prev) => prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]);
-                  }} />
-                  <FormLabel style={{ marginTop: 16 }}>Instructions</FormLabel>
-                  <RoundedTextInput
-                    style={styles.instructionsInput}
-                    placeholder="Type here"
-                    value={instructions}
-                    onChangeText={setInstructions}
-                    multiline
-                    numberOfLines={4}
-                  />
-                  <PrimaryButton style={{ marginTop: 16, borderRadius: 12 }} onPress={() => {
-                    if (!selectedMusic) return;
-                    setAssignedMusic(prev => [
-                      ...prev,
-                      {
-                        id: Date.now(),
-                        title: selectedMusic.title,
-                        image: selectedMusic.image,
-                        startDate,
-                        endDate,
-                        medTimes: [...medTimes],
-                        instructions,
-                      },
-                    ]);
-                    setSelectedMusic(null);
-                    setStartDate('');
-                    setEndDate('');
-                    setMedTimes([]);
-                    setInstructions('');
-                    setTab('assigned');
-                  }}>
-                    Save
-                  </PrimaryButton>
-                </View>
-              </Animated.View>
-            </View>
+            <CollapsibleConfigSection
+              type="Music"
+              configExpanded={configExpanded}
+              toggleConfig={toggleConfig}
+              configAnim={configAnim}
+              configSectionHeight={configSectionHeight}
+              selectedItem={selectedMusic}
+              startDate={startDate}
+              onStartDatePress={() => setShowStartPicker(true)}
+              repeatType={repeatType}
+              onRepeatTypePress={setRepeatType}
+              showRepeatDropdown={showRepeatDropdown}
+              setShowRepeatDropdown={setShowRepeatDropdown}
+              REPEAT_OPTIONS={REPEAT_OPTIONS}
+              numDays={numDays}
+              setNumDays={setNumDays}
+              numWeeks={numWeeks}
+              setNumWeeks={setNumWeeks}
+              weekDays={selectedWeekDays}
+              setWeekDays={setSelectedWeekDays}
+              WEEK_DAYS={WEEK_DAYS}
+              medTimes={medTimes}
+              setMedTimes={setMedTimes}
+              MED_TIMES={MED_TIMES}
+              instructions={instructions}
+              setInstructions={setInstructions}
+              onSave={() => {
+                if (!selectedMusic) return;
+                if (repeatType === 'Weekly' && selectedWeekDays.length === 0) return;
+                setAssignedMusic(prev => [
+                  ...prev,
+                  {
+                    id: Date.now(),
+                    title: selectedMusic.title || '',
+                    image: selectedMusic.image || null,
+                    startDate,
+                    repeatType,
+                    numDays: repeatType === 'Daily' ? numDays : undefined,
+                    numWeeks: repeatType === 'Weekly' ? numWeeks : undefined,
+                    weekDays: repeatType === 'Weekly' ? [...selectedWeekDays] : [],
+                    medTimes: [...medTimes],
+                    instructions,
+                  },
+                ]);
+                setSelectedMusic(null);
+                setStartDate('');
+                setNumDays(1);
+                setNumWeeks(1);
+                setRepeatType('Daily');
+                setSelectedWeekDays([]);
+                setMedTimes([]);
+                setInstructions('');
+                setTab('assigned');
+              }}
+              saveDisabled={repeatType === 'Weekly' && selectedWeekDays.length === 0}
+              styles={ConfigSectionStyles}
+            />
           ) : (
             <TouchableOpacity
               style={styles.configToggleCollapsed}

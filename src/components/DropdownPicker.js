@@ -14,18 +14,25 @@ const Label = styled.Text`
   margin-bottom: 5px;
 `;
 
-const PickerContainer = styled.View`
-  border-width: 1px;
-  color: black;
-  border-color: #ccc;
-  border-radius: 5px;
-`;
+const PickerContainer = styled.View``;
 
-const DropdownPicker = ({ error, label, data, value, setValue }) => {
-  
+const DropdownPicker = ({ error, label, data, value, setValue, style, showLabel = true }) => {
+  const dropdownStyle = {
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    justifyContent: 'center',
+    textAlignVertical: 'center',
+    marginTop: 10,
+    ...style,
+  };
   return (
-    <FieldContainer>
-      <Label>{label}</Label>
+    <FieldContainer style={!showLabel ? { marginTop: 0, marginBottom: 0 } : {}}>
+      {showLabel && <Label>{label}</Label>}
       <PickerContainer>
         <Dropdown
           data={(data || []).map((item) => ({
@@ -34,12 +41,11 @@ const DropdownPicker = ({ error, label, data, value, setValue }) => {
           }))}
           labelField="label"
           valueField="value"
-          placeholder={`Select ${label}`}
+          placeholder={label ? `Select ${label}` : 'Select'}
           value={value}
           onChange={(item) => setValue(item.value)}
-          style={{
-            padding: 10,
-          }}
+          style={dropdownStyle}
+          containerStyle={{}}
           placeholderStyle={{
             color: '#ccc',
             fontSize: 16,

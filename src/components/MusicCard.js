@@ -21,6 +21,10 @@ const MusicCard = ({
   endDate,
   medTimes,
   instructions,
+  numDays,
+  repeatType,
+  weekDays,
+  numWeeks,
 }) => (
   <View style={styles.card}>
     <Image
@@ -42,10 +46,22 @@ const MusicCard = ({
         )}
       </View>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-      {(startDate || endDate) && (
-        <View style={styles.row}>
-          {startDate && <><Text style={styles.detailLabel}>Start:</Text><Text style={styles.detailValue}>{formatDateDMY(startDate)}</Text></>}
-          {endDate && <><Text style={[styles.detailLabel, { marginLeft: 12 }]}>End:</Text><Text style={styles.detailValue}>{formatDateDMY(endDate)}</Text></>}
+      <View style={styles.row}>
+        {startDate && (
+          <Text style={styles.detailValue}><Text style={styles.detailLabel}>Start:</Text> {formatDateDMY(startDate)}</Text>
+        )}
+        {repeatType === 'Daily' && numDays && (
+          <Text style={[styles.detailValue, { marginLeft: 12 }]}><Text style={styles.detailLabel}>Repeat:</Text> {numDays} Day{numDays > 1 ? 's' : ''}</Text>
+        )}
+        {repeatType === 'Weekly' && numWeeks && (
+          <Text style={[styles.detailValue, { marginLeft: 12 }]}><Text style={styles.detailLabel}>Repeat:</Text> {numWeeks} Week{numWeeks > 1 ? 's' : ''}</Text>
+        )}
+      </View>
+      {repeatType === 'Weekly' && weekDays && weekDays.length > 0 && (
+        <View style={styles.medTimesRow}>
+          {weekDays.map((day, idx) => (
+            <View key={idx} style={styles.weekDayChip}><Text style={styles.weekDayText}>{day}</Text></View>
+          ))}
         </View>
       )}
       {medTimes && medTimes.length > 0 && (
@@ -132,6 +148,19 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginTop: 6,
     marginBottom: 2,
+  },
+  weekDayChip: {
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  weekDayText: {
+    color: '#555',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   medTimeChip: {
     backgroundColor: '#e6f0fa',
