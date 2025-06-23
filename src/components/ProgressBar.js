@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 12,
+    marginBottom: 2,
   },
   text: {
     fontSize: 15,

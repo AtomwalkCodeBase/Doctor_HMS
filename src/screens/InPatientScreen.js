@@ -104,27 +104,6 @@ const InPatientScreen = () => {
       <CustomStatusBar />
       <Header title="In-Patient Dashboard" onBack={() => router.back()} />
 
-      {/* Search + Filter Row */}
-      <View style={styles.searchRow}>
-        <View style={{ flex: 1, marginRight: 10 }}>
-          <SearchBar
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search patients"
-            style={styles.searchBar}
-            inputStyle={{ fontSize: 15 }}
-          />
-        </View>
-        <View style={{ width: 140 }}>
-          <DropdownPicker
-            data={wardOptions}
-            value={ward}
-            setValue={setWard}
-            showLabel={false}
-          />
-        </View>
-      </View>
-
       {/* Tab Switcher */}
       <View style={styles.tabsRow}>
         <TouchableOpacity
@@ -141,9 +120,28 @@ const InPatientScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Progress Section */}
-      <View style={{ paddingHorizontal: 16 }}>
-        <ProgressBar completed={2} total={10} />
+      {/* ProgressBar just below subtab */}
+      <ProgressBar completed={2} total={10} />
+
+      {/* Search + Filter Row */}
+      <View style={styles.searchRow}>
+        <View style={{ flex: 1, marginRight: 10 }}>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search patients"
+            style={styles.searchBar}
+            inputStyle={{ fontSize: 15 }}
+          />
+        </View>
+        <View style={[{ width: 110, marginTop: 2 }]}>
+          <DropdownPicker
+            data={wardOptions}
+            value={ward}
+            setValue={setWard}
+            showLabel={false}
+          />
+        </View>
       </View>
 
       {/* Patient Cards List */}
@@ -172,8 +170,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 2,
+    marginBottom: 14,
   },
   searchBar: {
     backgroundColor: "#fff",
@@ -224,7 +222,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   patientCardWrapper: {
-    marginBottom: 2,
+    marginBottom: -5,
     backgroundColor: 'transparent',
   },
   cardWithBadges: {

@@ -2,10 +2,35 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const AppointmentCard = ({ name, date, time, avatar, completed, onPress }) => (
+const STATUS_COLORS = {
+  "Needs Attention": "#ffe066",
+  critical: "#ff6b6b",
+  Stable: "#8DD8FF",
+  "Round Completed": "#4ade80",
+};
+
+const StatusBadge = ({ label }) => (
+  <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[label] || "#eee" }]}> 
+    <Text style={[styles.statusBadgeText, { color: label === "critical" ? "#fff" : "#222" }]}>{label}</Text>
+  </View>
+);
+
+const AppointmentCard = ({ id, name, date, time, avatar, completed, onPress, status }) => (
   <View style={styles.card}>
     <View style={{ flex: 1 }}>
+      {/* Status Badges */}
+      {status && Array.isArray(status) && status.length > 0 && (
+        <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+          {status.map((s, idx) => (
+            <StatusBadge key={idx} label={s} />
+          ))}
+        </View>
+      )}
       <Text style={styles.name}>{name}</Text>
+      {/* Patient ID */}
+      {id && (
+        <Text style={styles.idText}>ID: {id}</Text>
+      )}
       <Text style={styles.date}>{date}</Text>
       <Text style={styles.time}>{time}</Text>
       {completed ? (
@@ -41,18 +66,23 @@ const styles = StyleSheet.create({
   name: {
     fontWeight: 'bold',
     fontSize: 18,
-    marginBottom: 4,
+    marginBottom: 0,
     color: '#111',
+  },
+  idText: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 0,
   },
   date: {
     color: '#6B7280',
     fontSize: 14,
-    marginBottom: 4,
+    marginBottom: 0,
   },
   time: {
     color: '#6B7280',
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   detailsButton: {
     backgroundColor: '#F3F4F6',
@@ -88,6 +118,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginLeft: 24,
     backgroundColor: '#f5e3d7',
+  },
+  statusBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginRight: 6,
+    marginBottom: 2,
+    alignSelf: "flex-start",
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
 
