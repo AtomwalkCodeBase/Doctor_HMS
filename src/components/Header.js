@@ -5,12 +5,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 const Header = ({ title, onBack }) => (
   <View style={styles.header}>
     <TouchableOpacity onPress={onBack} style={styles.backButton}>
-      <MaterialIcons name="arrow-back" size={24} color="#fff" />
+      <MaterialIcons name="arrow-back" size={26} color="#fff" />
     </TouchableOpacity>
     <View style={styles.titleContainer}>
       <Text style={styles.headerTitle}>{title}</Text>
     </View>
-    <View style={styles.placeholder} />
+    <View style={styles.backButton} />
   </View>
 );
 
@@ -18,28 +18,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0366d6',
-    paddingVertical: 15,
+    height: 64,
+    backgroundColor: '#0366D6',
     paddingHorizontal: 16,
     width: '100%',
   },
   backButton: {
-    width: 40,
-    height: 30,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
-    alignItems: 'center',
+    // alignItems: 'center',
+    marginLeft: 0
   },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 0,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
     color: '#fff',
-  },
-  placeholder: {
-    width: 40, // Same width as backButton for balance
+    textAlign: 'center',
+    fontFamily: 'Inter', // fallback to system font if not available
   },
 });
 
