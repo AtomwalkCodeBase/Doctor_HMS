@@ -1,18 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Easing, FlatList } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Easing, FlatList, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Dimensions } from 'react-native';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
-import DatePickerField from '../components/DatePickerField';
-import MultiSelectButtonGroup from '../components/MultiSelectButtonGroup';
 import OutlinedButton from '../components/OutlinedButton';
 import PrimaryButton from '../components/PrimaryButton';
-import RoundedTextInput from '../components/RoundedTextInput';
-import FormLabel from '../components/FormLabel';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import MusicCard from '../components/MusicCard';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import CollapsibleConfigSection from '../components/CollapsibleConfigSection';
 import ConfigSectionStyles from '../components/ConfigSectionStyles';
 
@@ -27,17 +22,9 @@ const EXERCISE_LIST = [
 
 const MED_TIMES = ['Morning', 'Noon', 'Evening', 'Night'];
 
-const REPEAT_OPTIONS = ['Daily', 'Weekly'];
+const REPEAT_OPTIONS = ['Daily', 'Weekly', 'Monthly'];
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function formatDateDMY(date) {
-  if (!date) return '';
-  if (typeof date === 'string') return date;
-  const d = new Date(date);
-  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-}
-
-const CARD_LIST_HEIGHT = 320;
 const AddExercise = () => {
   const [tab, setTab] = useState('assign');
   const [search, setSearch] = useState('');
@@ -58,6 +45,26 @@ const AddExercise = () => {
   const [numWeeks, setNumWeeks] = useState(1);
   const [selectedWeekDays, setSelectedWeekDays] = useState([]);
   const [showRepeatDropdown, setShowRepeatDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const onKeyboardShow = (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      setKeyboardVisible(true);
+    };
+    const onKeyboardHide = () => {
+      setKeyboardHeight(0);
+      setKeyboardVisible(false);
+    };
+    const showSub = Keyboard.addListener('keyboardDidShow', onKeyboardShow);
+    const hideSub = Keyboard.addListener('keyboardDidHide', onKeyboardHide);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const expandConfig = () => {
     if (!configExpanded) {
@@ -81,210 +88,250 @@ const AddExercise = () => {
     setConfigExpanded(!configExpanded);
   };
 
-  const configSectionHeight = repeatType === 'Weekly' ? 585 : 500;
+  const windowHeight = Dimensions.get('window').height;
+  const baseHeight = repeatType === 'Weekly' ? 640 : 550;
+  let configSectionHeight = baseHeight;
+  if (keyboardVisible) {
+    configSectionHeight = Math.max(200, windowHeight - keyboardHeight - 180);
+  }
 
   return (
-    <View style={{ flex: 1 }}>
-      <Header title="Add Exercise" onBack={() => router.back()} />
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        <TouchableOpacity style={tab === 'assign' ? styles.tabSelected : styles.tabUnselected} onPress={() => setTab('assign')}>
-          <Text style={tab === 'assign' ? styles.tabSelectedText : styles.tabUnselectedText}>Assign Exercise</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={tab === 'assigned' ? styles.tabSelected : styles.tabUnselected} onPress={() => setTab('assigned')}>
-          <Text style={tab === 'assigned' ? styles.tabSelectedText : styles.tabUnselectedText}>View Exercise</Text>
-        </TouchableOpacity>
-      </View>
-      {tab === 'assign' ? (
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <View style={{ flex: 1 }}>
+        <Header title="Add Exercise" onBack={() => router.back()} />
+        {/* Tabs */}
+        <View style={styles.tabsRow}>
+          <TouchableOpacity style={tab === 'assign' ? styles.tabSelected : styles.tabUnselected} onPress={() => setTab('assign')}>
+            <Text style={tab === 'assign' ? styles.tabSelectedText : styles.tabUnselectedText}>Assign Exercise</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={tab === 'assigned' ? styles.tabSelected : styles.tabUnselected} onPress={() => setTab('assigned')}>
+            <Text style={tab === 'assigned' ? styles.tabSelectedText : styles.tabUnselectedText}>View Exercise</Text>
+          </TouchableOpacity>
+        </View>
+        {/* Main content with keyboard dismissal */}
         <View style={{ flex: 1 }}>
-          <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={{ paddingHorizontal: 20, marginTop: 8, flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                <SearchBar value={search} onChangeText={setSearch} style={{ flex: 1 }} />
-                <TouchableOpacity style={styles.filterIconBtn}>
-                  <Ionicons name="filter" size={24} color="#0366d6" />
-                </TouchableOpacity>
-              </View>
-              <View style={{ flex: 1, marginTop: 16, paddingBottom: 48 }}>
-                <FlatList
-                  data={EXERCISE_LIST.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))}
-                  keyExtractor={item => item.id.toString()}
-                  renderItem={({ item }) => (
-                    <MusicCard
-                      title={item.title}
-                      image={item.image}
-                      buttonText={selectedExercise && selectedExercise.id === item.id ? 'Selected' : 'Select'}
-                      onButtonPress={() => {
-                        if (selectedExercise && selectedExercise.id === item.id) {
-                          setSelectedExercise(null);
-                          Animated.timing(configAnim, {
-                            toValue: 0,
-                            duration: 250,
-                            easing: Easing.ease,
-                            useNativeDriver: false,
-                          }).start();
-                          setConfigExpanded(false);
-                        } else {
-                          setSelectedExercise(item);
-                          expandConfig();
-                        }
-                      }}
-                      buttonStyle={selectedExercise && selectedExercise.id === item.id ? { borderColor: '#0366d6', backgroundColor: '#e6f0fa' } : {}}
-                      disabled={false}
+          {tab === 'assign' ? (
+            <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <View style={{ paddingHorizontal: 20, marginTop: 8, flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                    <SearchBar value={search} onChangeText={setSearch} style={{ flex: 1 }} />
+                  </View>
+                  <View style={{ flex: 1, marginTop: 16, paddingBottom: 48 }}>
+                    <FlatList
+                      data={EXERCISE_LIST.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))}
+                      keyExtractor={item => item.id.toString()}
+                      renderItem={({ item }) => (
+                        <MusicCard
+                          title={item.title}
+                          image={item.image}
+                          buttonText={selectedExercise && selectedExercise.id === item.id ? 'Selected' : 'Select'}
+                          onButtonPress={() => {
+                            if (selectedExercise && selectedExercise.id === item.id) {
+                              setSelectedExercise(null);
+                              Animated.timing(configAnim, {
+                                toValue: 0,
+                                duration: 250,
+                                easing: Easing.ease,
+                                useNativeDriver: false,
+                              }).start();
+                              setConfigExpanded(false);
+                            } else {
+                              setSelectedExercise(item);
+                              expandConfig();
+                            }
+                          }}
+                          buttonStyle={selectedExercise && selectedExercise.id === item.id ? { borderColor: '#0366d6', backgroundColor: '#e6f0fa' } : {}}
+                          disabled={false}
+                        />
+                      )}
+                      showsVerticalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                      bounces={true}
                     />
-                  )}
-                  showsVerticalScrollIndicator={false}
+                  </View>
+                </View>
+              </View>
+              {/* Bottom collapsible config section */}
+              {configExpanded ? (
+                <CollapsibleConfigSection
+                  type="Exercise"
+                  configExpanded={configExpanded}
+                  toggleConfig={toggleConfig}
+                  configAnim={configAnim}
+                  configSectionHeight={configSectionHeight}
+                  selectedItem={selectedExercise}
+                  startDate={startDate}
+                  onStartDatePress={() => setShowStartPicker(true)}
+                  repeatType={repeatType}
+                  onRepeatTypePress={(opt) => {
+                    setRepeatType(opt);
+                    setShowRepeatDropdown(false);
+                  }}
+                  showRepeatDropdown={showRepeatDropdown}
+                  setShowRepeatDropdown={setShowRepeatDropdown}
+                  onSetDropdownPosition={setDropdownPosition}
+                  REPEAT_OPTIONS={REPEAT_OPTIONS}
+                  numDays={numDays}
+                  setNumDays={setNumDays}
+                  numWeeks={numWeeks}
+                  setNumWeeks={setNumWeeks}
+                  weekDays={selectedWeekDays}
+                  setWeekDays={setSelectedWeekDays}
+                  WEEK_DAYS={WEEK_DAYS}
+                  medTimes={medTimes}
+                  setMedTimes={setMedTimes}
+                  MED_TIMES={MED_TIMES}
+                  instructions={instructions}
+                  setInstructions={setInstructions}
+                  onSave={() => {
+                    if (!selectedExercise) return;
+                    if (repeatType === 'Weekly' && selectedWeekDays.length === 0) return;
+                    setAssignedExercises(prev => [
+                      ...prev,
+                      {
+                        id: Date.now(),
+                        title: selectedExercise.title || '',
+                        image: selectedExercise.image || null,
+                        startDate,
+                        repeatType,
+                        numDays: repeatType === 'Daily' ? numDays : undefined,
+                        numWeeks: repeatType === 'Weekly' ? numWeeks : undefined,
+                        weekDays: repeatType === 'Weekly' ? [...selectedWeekDays] : [],
+                        medTimes: [...medTimes],
+                        instructions,
+                      },
+                    ]);
+                    setSelectedExercise(null);
+                    setStartDate('');
+                    setNumDays(1);
+                    setNumWeeks(1);
+                    setRepeatType('Daily');
+                    setSelectedWeekDays([]);
+                    setMedTimes([]);
+                    setInstructions('');
+                    setTab('assigned');
+                  }}
+                  saveDisabled={repeatType === 'Weekly' && selectedWeekDays.length === 0}
+                  styles={ConfigSectionStyles}
                 />
+              ) : (
+                <TouchableOpacity
+                  style={styles.configToggleCollapsed}
+                  onPress={toggleConfig}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.configToggleTextCollapsed}>▶ Configure Selected Exercise</Text>
+                </TouchableOpacity>
+              )}
+              {/* Render DateTimePickers at root level */}
+              {showStartPicker && (
+                <DateTimePicker
+                  value={startDate ? new Date(startDate) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowStartPicker(false);
+                    if (selectedDate) setStartDate(selectedDate);
+                  }}
+                />
+              )}
+              {showEndPicker && (
+                <DateTimePicker
+                  value={endDate ? new Date(endDate) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowEndPicker(false);
+                    if (selectedDate) setEndDate(selectedDate);
+                  }}
+                />
+              )}
+            </View>
+          ) : (
+            <View style={{ flex: 1, position: 'relative' }}>
+              <ScrollView
+                contentContainerStyle={[styles.contentContainer, { paddingBottom: 120 }]}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                bounces={true}
+              >
+                <SearchBar value={search} onChangeText={setSearch} />
+                <View style={{ marginTop: 16 }}>
+                  {assignedExercises.filter(e => e.title.toLowerCase().includes(search.toLowerCase())).map((exercise, idx) => (
+                    <MusicCard
+                      key={exercise.id}
+                      title={exercise.title}
+                      image={exercise.image}
+                      buttonText="Remove"
+                      onButtonPress={() => setAssignedExercises(assignedExercises.filter(e => e.id !== exercise.id))}
+                      buttonStyle={{ backgroundColor: '#f2f2f2', borderColor: '#f2f2f2', color: '#222' }}
+                      startDate={exercise.startDate}
+                      endDate={exercise.endDate}
+                      medTimes={exercise.medTimes}
+                      instructions={exercise.instructions}
+                      repeatType={exercise.repeatType}
+                      numDays={exercise.numDays}
+                      numWeeks={exercise.numWeeks}
+                      weekDays={exercise.weekDays}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+              <View style={styles.fixedBottomRow}>
+                <OutlinedButton style={styles.addAnotherBtn} onPress={() => {
+                  setTab('assign');
+                  setConfigExpanded(false);
+                  configAnim.setValue(0);
+                }}>
+                  Add Another
+                </OutlinedButton>
+                <PrimaryButton
+                  style={styles.doneBtn}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/PatientList',
+                      params: {
+                        patientName: params.patientName,
+                        appointmentTime: params.appointmentTime,
+                        appointmentDate: params.appointmentDate,
+                      },
+                    })
+                  }
+                >
+                  Done
+                </PrimaryButton>
               </View>
             </View>
-          </View>
-          {/* Bottom collapsible config section */}
-          {configExpanded ? (
-            <CollapsibleConfigSection
-              type="Exercise"
-              configExpanded={configExpanded}
-              toggleConfig={toggleConfig}
-              configAnim={configAnim}
-              configSectionHeight={configSectionHeight}
-              selectedItem={selectedExercise}
-              startDate={startDate}
-              onStartDatePress={() => setShowStartPicker(true)}
-              repeatType={repeatType}
-              onRepeatTypePress={opt => setRepeatType(opt)}
-              showRepeatDropdown={showRepeatDropdown}
-              setShowRepeatDropdown={setShowRepeatDropdown}
-              REPEAT_OPTIONS={REPEAT_OPTIONS}
-              numDays={numDays}
-              setNumDays={setNumDays}
-              numWeeks={numWeeks}
-              setNumWeeks={setNumWeeks}
-              weekDays={selectedWeekDays}
-              setWeekDays={setSelectedWeekDays}
-              WEEK_DAYS={WEEK_DAYS}
-              medTimes={medTimes}
-              setMedTimes={setMedTimes}
-              MED_TIMES={MED_TIMES}
-              instructions={instructions}
-              setInstructions={setInstructions}
-              onSave={() => {
-                if (!selectedExercise) return;
-                if (repeatType === 'Weekly' && selectedWeekDays.length === 0) return;
-                setAssignedExercises(prev => [
-                  ...prev,
-                  {
-                    id: Date.now(),
-                    title: selectedExercise.title || '',
-                    image: selectedExercise.image || null,
-                    startDate,
-                    repeatType,
-                    numDays: repeatType === 'Daily' ? numDays : undefined,
-                    numWeeks: repeatType === 'Weekly' ? numWeeks : undefined,
-                    weekDays: repeatType === 'Weekly' ? [...selectedWeekDays] : [],
-                    medTimes: [...medTimes],
-                    instructions,
-                  },
-                ]);
-                setSelectedExercise(null);
-                setStartDate('');
-                setNumDays(1);
-                setNumWeeks(1);
-                setRepeatType('Daily');
-                setSelectedWeekDays([]);
-                setMedTimes([]);
-                setInstructions('');
-                setTab('assigned');
-              }}
-              saveDisabled={repeatType === 'Weekly' && selectedWeekDays.length === 0}
-              styles={ConfigSectionStyles}
-            />
-          ) : (
-            <TouchableOpacity
-              style={styles.configToggleCollapsed}
-              onPress={toggleConfig}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.configToggleTextCollapsed}>▶ Configure Selected Exercise</Text>
-            </TouchableOpacity>
-          )}
-          {/* Render DateTimePickers at root level */}
-          {showStartPicker && (
-            <DateTimePicker
-              value={startDate ? new Date(startDate) : new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowStartPicker(false);
-                if (selectedDate) setStartDate(selectedDate);
-              }}
-            />
-          )}
-          {showEndPicker && (
-            <DateTimePicker
-              value={endDate ? new Date(endDate) : new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowEndPicker(false);
-                if (selectedDate) setEndDate(selectedDate);
-              }}
-            />
           )}
         </View>
-      ) : (
-        <View style={{ flex: 1, position: 'relative' }}>
-          <ScrollView
-            contentContainerStyle={[styles.contentContainer, { paddingBottom: 120 }]}
-            showsVerticalScrollIndicator={false}
+
+        {showRepeatDropdown && (
+          <TouchableOpacity
+            style={styles.dropdownOverlay}
+            onPress={() => setShowRepeatDropdown(false)}
           >
-            <SearchBar value={search} onChangeText={setSearch} />
-            <View style={{ marginTop: 16 }}>
-              {assignedExercises.filter(e => e.title.toLowerCase().includes(search.toLowerCase())).map((exercise, idx) => (
-                <MusicCard
-                  key={exercise.id}
-                  title={exercise.title}
-                  image={exercise.image}
-                  buttonText="Remove"
-                  onButtonPress={() => setAssignedExercises(assignedExercises.filter(e => e.id !== exercise.id))}
-                  buttonStyle={{ backgroundColor: '#f2f2f2', borderColor: '#f2f2f2', color: '#222' }}
-                  startDate={exercise.startDate}
-                  endDate={exercise.endDate}
-                  medTimes={exercise.medTimes}
-                  instructions={exercise.instructions}
-                  repeatType={exercise.repeatType}
-                  numDays={exercise.numDays}
-                  numWeeks={exercise.numWeeks}
-                  weekDays={exercise.weekDays}
-                />
+            <View style={[styles.dropdownModal, dropdownPosition]}>
+              {REPEAT_OPTIONS.map(opt => (
+                <TouchableOpacity
+                  key={opt}
+                  style={styles.dropdownOption}
+                  onPress={() => {
+                    setRepeatType(opt);
+                    setShowRepeatDropdown(false);
+                  }}
+                >
+                  <Text style={styles.dropdownOptionText}>{opt}</Text>
+                </TouchableOpacity>
               ))}
             </View>
-          </ScrollView>
-          <View style={styles.fixedBottomRow}>
-            <OutlinedButton style={styles.addAnotherBtn} onPress={() => {
-              setTab('assign');
-              setConfigExpanded(false);
-              configAnim.setValue(0);
-            }}>
-              Add Another
-            </OutlinedButton>
-            <PrimaryButton
-              style={styles.doneBtn}
-              onPress={() =>
-                router.push({
-                  pathname: '/PatientList',
-                  params: {
-                    patientName: params.patientName,
-                    appointmentTime: params.appointmentTime,
-                    appointmentDate: params.appointmentDate,
-                  },
-                })
-              }
-            >
-              Done
-            </PrimaryButton>
-          </View>
-        </View>
-      )}
-    </View>
+          </TouchableOpacity>
+        )}
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -397,6 +444,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#0366d6',
+    letterSpacing: 0.2,
   },
   configSection: {
     backgroundColor: '#fff',
@@ -543,22 +591,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#222',
   },
-  dropdownModal: {
+  dropdownOverlay: {
     position: 'absolute',
-    top: 44,
+    top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 20,
+  },
+  dropdownModal: {
+    position: 'absolute',
     backgroundColor: '#fff',
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 4,
-    zIndex: 100,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   dropdownOption: {
-    padding: 14,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f2f2f2',
   },

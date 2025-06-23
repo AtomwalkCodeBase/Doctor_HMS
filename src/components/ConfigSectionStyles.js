@@ -88,6 +88,19 @@ const ConfigSectionStyles = StyleSheet.create({
     color: '#0366d6',
     marginHorizontal: 8,
   },
+  stepperInput: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0366d6',
+    textAlign: 'center',
+    minWidth: 40,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e6f0fa',
+  },
   frequencyDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -103,29 +116,6 @@ const ConfigSectionStyles = StyleSheet.create({
   frequencyDropdownText: {
     fontSize: 15,
     color: '#222',
-  },
-  dropdownModal: {
-    position: 'absolute',
-    top: 44,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 4,
-    zIndex: 100,
-  },
-  dropdownOption: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f2f2f2',
-  },
-  dropdownOptionText: {
-    fontSize: 15,
-    color: '#0366d6',
   },
   weekDaysRow: {
     flexDirection: 'row',
@@ -219,6 +209,23 @@ const ConfigSectionStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
     letterSpacing: 0.2,
+  },
+  selectedItemIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e6f0fa',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0366d6',
+  },
+  selectedItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0366d6',
+    marginLeft: 8,
   },
 });
 

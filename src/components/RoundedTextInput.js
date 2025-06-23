@@ -5,6 +5,8 @@ const RoundedTextInput = ({ style, ...props }) => (
   <TextInput
     style={[styles.input, style]}
     placeholderTextColor="#888"
+    returnKeyType="done"
+    blurOnSubmit={true}
     {...props}
   />
 );
