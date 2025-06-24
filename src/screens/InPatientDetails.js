@@ -36,9 +36,16 @@ const vitalsData = [
   },
   {
     icon: 'water',
-    label: 'Blood Pressure',
+    label: 'BP',
     value: '120/80',
     iconColor: '#3B82F6',
+    iconSet: 'Ionicons',
+  },
+  {
+    icon: 'pulse',
+    label: 'SpO2',
+    value: '98%',
+    iconColor: '#10B981',
     iconSet: 'Ionicons',
   },
 ];
@@ -351,6 +358,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginVertical: 20,
+    marginTop: 0,
   },
   toggleLabel: {
     fontSize: 16,
@@ -370,6 +378,8 @@ const styles = StyleSheet.create({
   },
   vitalsScroll: {
     marginVertical: 10,
+    marginBottom: 0,
+    marginTop: 0,
   },
   tabsSection: {
     flexDirection: 'row',
@@ -378,6 +388,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 0,
     justifyContent: 'space-between',
+    marginTop: 5,
   },
   tabBtn: {
     flex: 1,

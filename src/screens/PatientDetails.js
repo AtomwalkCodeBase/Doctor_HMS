@@ -38,26 +38,41 @@ const PatientDetails = () => {
         </View>
 
         {/* Vitals Summary */}
-        <View style={styles.vitalsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.vitalsContainer}
+          contentContainerStyle={{ paddingLeft: 16, paddingRight: 8 }}
+        >
           <VitalCard
             icon="heart"
-            label="Body Weight"
-            value="70 Kg"
+            label="Heart Rate"
+            value="72 bpm"
             iconColor="#EF4444"
+            backgroundColor="#fff"
           />
           <VitalCard
             icon="thermometer"
-            label="Body Temperature"
-            value="37.2 Celsius"
+            label="Temperature"
+            value="98.6°F"
             iconColor="#F59E0B"
+            backgroundColor="#fff"
+          />
+          <VitalCard
+            icon="water"
+            label="BP"
+            value="120/80"
+            iconColor="#3B82F6"
+            backgroundColor="#fff"
           />
           <VitalCard
             icon="pulse"
-            label="Blood Pressure"
-            value="120/80 mmHg"
-            iconColor="#EC4899"
+            label="SpO2"
+            value="98%"
+            iconColor="#10B981"
+            backgroundColor="#fff"
           />
-        </View>
+        </ScrollView>
 
         {/* Issue/Symptoms */}
         <View style={styles.section}>
@@ -165,7 +180,7 @@ const styles = StyleSheet.create({
   },
   vitalsContainer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingTop: 16,
     paddingBottom: 8,
     marginTop: 0,
   },
@@ -186,7 +201,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderRadius: 12,
     padding: 12,
-    height: 110,
+    height: 120,
     textAlignVertical: 'top',
     fontSize: 16,
   },
