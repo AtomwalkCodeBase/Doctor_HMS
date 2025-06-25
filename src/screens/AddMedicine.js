@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, Image, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, Image, Keyboard, TouchableWithoutFeedback, findNodeHandle, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ViewMusicCard from '../components/ViewMusicCard';
 import ViewTabFooter from '../components/ViewTabFooter';
+import ConfigSectionStyles from '../components/ConfigSectionStyles';
+import FormLabel from '../components/FormLabel';
+import RoundedTextInput from '../components/RoundedTextInput';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const MED_TIMES = ['Morning', 'Noon', 'Evening', 'Night'];
 const FOOD_OPTIONS = ['After Food', 'Before Food'];
+const REPEAT_OPTIONS = ['Daily', 'Weekly', 'Monthly'];
+const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function formatDateDMY(date) {
   if (!date) return '';
@@ -29,6 +35,14 @@ const AddMedicine = () => {
   const [medicines, setMedicines] = useState([]);
   const [activeTab, setActiveTab] = useState('Add Medicine');
   const [isNoteFocused, setIsNoteFocused] = useState(false);
+  const [repeatType, setRepeatType] = useState('Daily');
+  const [numDays, setNumDays] = useState(1);
+  const [numWeeks, setNumWeeks] = useState(1);
+  const [selectedWeekDays, setSelectedWeekDays] = useState([]);
+  const [instructions, setInstructions] = useState('');
+  const [showRepeatDropdown, setShowRepeatDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({});
+  const repeatAnchorRef = useRef(null);
 
   const toggleMedTime = (time) => {
     setMedTimes((prev) =>
@@ -62,6 +76,11 @@ const AddMedicine = () => {
     setFood([]);
     setNote('');
     setImageUri(null);
+    setRepeatType('Daily');
+    setNumDays(1);
+    setNumWeeks(1);
+    setSelectedWeekDays([]);
+    setInstructions('');
   };
 
   const addMedicineToList = () => {
@@ -74,6 +93,11 @@ const AddMedicine = () => {
       food,
       note,
       imageUri,
+      repeatType,
+      numDays,
+      numWeeks,
+      weekDays: [...selectedWeekDays],
+      instructions,
     };
     setMedicines(prev => [...prev, newMedicine]);
   };
@@ -141,79 +165,170 @@ const AddMedicine = () => {
             onChangeText={setMedName}
             placeholderTextColor="#888"
           />
-          {/* Dates */}
-          <View style={[styles.rowBetween, styles.sectionSpacing]}>
+          {/* Config Section Fields (flat, not collapsible) */}
+          {/* Start Date */}
+          <FormLabel style={{ marginTop: 12 }}>Start Date</FormLabel>
+          <TouchableOpacity onPress={() => setShowStartPicker(true)} style={ConfigSectionStyles.dateInputRowNew}>
+            <Ionicons name="calendar-outline" size={20} color="#0366d6" />
+            <Text style={ConfigSectionStyles.dateInputNew}>{startDate ? formatDateDMY(startDate) : 'Start Date'}</Text>
+          </TouchableOpacity>
+          {showStartPicker && (
+            <DateTimePicker
+              value={startDate ? new Date(startDate) : new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowStartPicker(false);
+                if (selectedDate) setStartDate(selectedDate);
+              }}
+            />
+          )}
+          {/* Repeat and No. of Days/Weeks Row */}
+          <View style={ConfigSectionStyles.rowBetweenInline}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={[styles.label, styles.sectionSpacing]}>Start Date</Text>
-              <TouchableOpacity onPress={() => setShowStartPicker(true)}>
-                <View style={styles.dateInputRow}>
-                  <Ionicons name="calendar-outline" size={18} color="#0366d6" />
-                  <Text style={styles.dateInput}>{startDate ? formatDateDMY(startDate) : '5/8/2025'}</Text>
-                </View>
-              </TouchableOpacity>
-              {showStartPicker && (
-                <DateTimePicker
-                  value={startDate ? new Date(startDate) : new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={onStartDateChange}
-                />
-              )}
+              <Text style={ConfigSectionStyles.labelSmall}>Repeat</Text>
+              <View ref={repeatAnchorRef} collapsible={false}>
+                <TouchableOpacity
+                  style={ConfigSectionStyles.frequencyDropdown}
+                  onPress={() => {
+                    if (repeatAnchorRef.current && repeatAnchorRef.current.measureInWindow) {
+                      repeatAnchorRef.current.measureInWindow((x, y, width, height) => {
+                        setDropdownPosition({ top: y + height, left: x, width });
+                        setShowRepeatDropdown(true);
+                      });
+                    } else {
+                      // fallback for debugging
+                      setDropdownPosition({ top: 200, left: 20, width: 150 });
+                      setShowRepeatDropdown(true);
+                    }
+                  }}
+                >
+                  <Text style={ConfigSectionStyles.frequencyDropdownText}>{repeatType}</Text>
+                  <Ionicons name="chevron-down" size={18} color="#0366d6" />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={[styles.label, styles.sectionSpacing]}>End Date</Text>
-              <TouchableOpacity onPress={() => setShowEndPicker(true)}>
-                <View style={styles.dateInputRow}>
-                  <Ionicons name="calendar-outline" size={18} color="#0366d6" />
-                  <Text style={styles.dateInput}>{endDate ? formatDateDMY(endDate) : '8/8/2025'}</Text>
+            {repeatType === 'Daily' && (
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={ConfigSectionStyles.labelSmall}>No. of Days</Text>
+                <View style={ConfigSectionStyles.stepperRow}>
+                  <TouchableOpacity
+                    style={[ConfigSectionStyles.stepperBtn, { marginRight: 12 }]}
+                    onPress={() => setNumDays(Math.max(1, numDays - 1))}
+                  >
+                    <MaterialCommunityIcons name="minus" size={20} color="#0366d6" />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={ConfigSectionStyles.stepperInput}
+                    value={numDays.toString()}
+                    onChangeText={text => {
+                      const numericText = text.replace(/[^0-9]/g, '');
+                      const value = parseInt(numericText) || 1;
+                      setNumDays(Math.max(1, Math.min(30, value)));
+                    }}
+                    keyboardType="numeric"
+                    textAlign="center"
+                    maxLength={2}
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                    contextMenuHidden={true}
+                  />
+                  <TouchableOpacity
+                    style={[ConfigSectionStyles.stepperBtn, { marginLeft: 12 }]}
+                    onPress={() => setNumDays(Math.min(30, numDays + 1))}
+                  >
+                    <MaterialCommunityIcons name="plus" size={20} color="#0366d6" />
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-              {showEndPicker && (
-                <DateTimePicker
-                  value={endDate ? new Date(endDate) : new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={onEndDateChange}
-                />
-              )}
-            </View>
+              </View>
+            )}
+            {repeatType === 'Weekly' && (
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={ConfigSectionStyles.labelSmall}>Repeat For (weeks)</Text>
+                <View style={ConfigSectionStyles.stepperRow}>
+                  <TouchableOpacity
+                    style={[ConfigSectionStyles.stepperBtn, { marginRight: 12 }]}
+                    onPress={() => setNumWeeks(Math.max(1, numWeeks - 1))}
+                  >
+                    <MaterialCommunityIcons name="minus" size={20} color="#0366d6" />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={ConfigSectionStyles.stepperInput}
+                    value={numWeeks.toString()}
+                    onChangeText={text => {
+                      const numericText = text.replace(/[^0-9]/g, '');
+                      const value = parseInt(numericText) || 1;
+                      setNumWeeks(Math.max(1, Math.min(12, value)));
+                    }}
+                    keyboardType="numeric"
+                    textAlign="center"
+                    maxLength={2}
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                    contextMenuHidden={true}
+                  />
+                  <TouchableOpacity
+                    style={[ConfigSectionStyles.stepperBtn, { marginLeft: 12 }]}
+                    onPress={() => setNumWeeks(Math.min(12, numWeeks + 1))}
+                  >
+                    <MaterialCommunityIcons name="plus" size={20} color="#0366d6" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </View>
-          {/* Medication Time */}
-          <Text style={[styles.label, styles.sectionSpacing]}>Medication Time</Text>
-          <View style={styles.btnRow}>
-            {MED_TIMES.map((time) => (
-              <TouchableOpacity
-                key={time}
-                style={medTimes.includes(time) ? styles.timeBtnSelected : styles.timeBtn}
-                onPress={() => toggleMedTime(time)}
-              >
-                <Text style={medTimes.includes(time) ? styles.timeBtnTextSelected : styles.timeBtnText}>{time}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Weekly Fields */}
+          {repeatType === 'Weekly' && (
+            <>
+              <Text style={[ConfigSectionStyles.labelSmall, { marginTop: 14 }]}>Select Days of the Week</Text>
+              <View style={ConfigSectionStyles.weekDaysRow}>
+                {WEEK_DAYS.map(day => {
+                  const selected = selectedWeekDays.includes(day);
+                  return (
+                    <TouchableOpacity
+                      key={day}
+                      style={selected ? ConfigSectionStyles.weekDayBtnSelected : ConfigSectionStyles.weekDayBtn}
+                      onPress={() => {
+                        setSelectedWeekDays(selected
+                          ? selectedWeekDays.filter(d => d !== day)
+                          : [...selectedWeekDays, day]);
+                      }}
+                    >
+                      <Text style={selected ? ConfigSectionStyles.weekDayTextSelected : ConfigSectionStyles.weekDayText}>{day}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
+          {/* Medication Time (pill buttons) */}
+          <FormLabel style={{ marginTop: 16 }}>Medication Time</FormLabel>
+          <View style={ConfigSectionStyles.pillButtonRow}>
+            {MED_TIMES.map(time => {
+              const selected = medTimes.includes(time);
+              return (
+                <TouchableOpacity
+                  key={time}
+                  style={selected ? ConfigSectionStyles.pillBtnSelected : ConfigSectionStyles.pillBtn}
+                  onPress={() => setMedTimes(selected ? medTimes.filter(t => t !== time) : [...medTimes, time])}
+                >
+                  <Text style={selected ? ConfigSectionStyles.pillBtnTextSelected : ConfigSectionStyles.pillBtnText}>{time}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          {/* To be Taken */}
-          <Text style={[styles.label, styles.sectionSpacing]}>To be Taken</Text>
-          <View style={styles.btnRow}>
-            {FOOD_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={food.includes(option) ? styles.timeBtnSelected : styles.timeBtn}
-                onPress={() => toggleFood(option)}
-              >
-                <Text style={food.includes(option) ? styles.timeBtnTextSelected : styles.timeBtnText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {/* Important Note */}
-          <Text style={[styles.label, styles.sectionSpacing]}>Important Note</Text>
-          <TextInput
-            style={[styles.noteInput, { height: 200 }]}
-            placeholder="Type Here"
-            value={note}
-            onChangeText={setNote}
-            placeholderTextColor="#888"
+          {/* Instructions */}
+          <FormLabel style={{ marginTop: 16 }}>Instructions</FormLabel>
+          <RoundedTextInput
+            style={ConfigSectionStyles.instructionsInputNew}
+            placeholder="Type here"
+            value={instructions}
+            onChangeText={setInstructions}
             multiline
+            numberOfLines={4}
           />
+          {/* End Date (removed) */}
+          {/* To be Taken (removed) */}
           {/* Add Another Medicine Button */}
           <TouchableOpacity style={[styles.addAnotherBtn, { marginTop: 18 }]} onPress={handleAddAnother}> 
             <Text style={styles.addAnotherText}>Add Another Medicine</Text>
@@ -235,13 +350,37 @@ const AddMedicine = () => {
             ))}
           </ScrollView>
           <ViewTabFooter
-            onAddAnother={() => setActiveTab('Add Medicine')}
+            onAddAnother={() => {
+              resetForm();
+              setActiveTab('Add Medicine');
+            }}
             onDone={() => router.push('/PatientList')}
             addAnotherText="Add Another"
             doneText="Done"
             style={{ marginBottom: 18 }}
           />
         </View>
+      )}
+      {showRepeatDropdown && (
+        <TouchableOpacity
+          style={styles.dropdownOverlay}
+          onPress={() => setShowRepeatDropdown(false)}
+        >
+          <View style={[styles.dropdownModal, dropdownPosition]}>
+            {REPEAT_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt}
+                style={styles.dropdownOption}
+                onPress={() => {
+                  setRepeatType(opt);
+                  setShowRepeatDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownOptionText}>{opt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -320,66 +459,6 @@ const styles = StyleSheet.create({
     height: 48,
     marginBottom: 4,
   },
-  dateInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 4,
-  },
-  dateInput: {
-    marginLeft: 7,
-    fontSize: 16,
-    color: '#222',
-    flex: 1,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 6,
-    marginBottom: 0,
-  },
-  timeBtn: {
-    borderWidth: 1,
-    borderColor: '#0366d6',
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  timeBtnSelected: {
-    backgroundColor: '#0366d6',
-    borderRadius: 22,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  timeBtnText: {
-    color: '#0366d6',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  timeBtnTextSelected: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  noteInput: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 14,
-    height: 140,
-    fontSize: 17,
-    color: '#222',
-    marginTop: 6,
-    textAlignVertical: 'top',
-  },
   addAnotherBtn: {
     borderWidth: 1,
     borderColor: '#0366d6',
@@ -424,6 +503,38 @@ const styles = StyleSheet.create({
   },
   sectionSpacing: {
     marginTop: 8,
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 20,
+  },
+  dropdownModal: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
+    minWidth: 120,
+  },
+  dropdownOption: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  dropdownOptionText: {
+    fontSize: 15,
+    color: '#0366d6',
   },
 });
 

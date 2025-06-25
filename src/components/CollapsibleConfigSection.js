@@ -53,11 +53,11 @@ const CollapsibleConfigSection = ({
   onSave,
   saveDisabled,
   styles,
+  repeatDropdownRef,
 }) => {
   const scrollViewRef = useRef(null);
   const [numDaysInput, setNumDaysInput] = useState(numDays.toString());
   const [numWeeksInput, setNumWeeksInput] = useState(numWeeks.toString());
-  const dropdownTriggerRef = useRef(null);
 
   // Update input values when props change
   React.useEffect(() => {
@@ -146,18 +146,9 @@ const CollapsibleConfigSection = ({
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.labelSmall}>Repeat</Text>
               <TouchableOpacity
-                ref={dropdownTriggerRef}
+                ref={repeatDropdownRef}
                 style={styles.frequencyDropdown}
-                onPress={() => {
-                  if (dropdownTriggerRef.current && onSetDropdownPosition) {
-                    dropdownTriggerRef.current.measureInWindow((x, y, width, height) => {
-                      onSetDropdownPosition({ top: y + height, left: x, width });
-                      setShowRepeatDropdown(true);
-                    });
-                  } else {
-                    setShowRepeatDropdown(true);
-                  }
-                }}
+                onPress={() => onRepeatTypePress && onRepeatTypePress()}
               >
                 <Text style={styles.frequencyDropdownText}>{repeatType}</Text>
                 <Ionicons name="chevron-down" size={18} color="#0366d6" />

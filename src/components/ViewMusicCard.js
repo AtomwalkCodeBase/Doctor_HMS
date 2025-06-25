@@ -14,48 +14,42 @@ const ViewMusicCard = ({ music, onRemove, type = 'music' }) => {
 
   return (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.cardTitleContainer}>
-          <Text style={styles.cardTitle}>{music.name || music.title}</Text>
-          {music.food && <Text style={styles.cardSubtitle}>{Array.isArray(music.food) ? music.food.join(', ') : music.food}</Text>}
+      <View style={styles.headerRow}>
+        <View style={styles.leftColumn}>
+          <Text style={styles.title}>{music.name || music.title}</Text>
+          <View style={[styles.detailRow, styles.firstDetailRow]}><Ionicons name="calendar-outline" size={18} color="#0366d6" /><Text style={styles.detailLabel}>Date: </Text><Text style={styles.detailValue}>{formatDate(music.startDate)}{music.endDate ? ` - ${formatDate(music.endDate)}` : ''}</Text></View>
+          {music.repeatType && (
+            <View style={styles.detailRow}><Ionicons name="repeat" size={18} color="#0366d6" /><Text style={styles.detailLabel}>Repeat: </Text><Text style={styles.detailValue}>{music.repeatType === 'Daily' ? `${music.numDays} Day${music.numDays > 1 ? 's' : ''}` : music.repeatType === 'Weekly' ? `${music.numWeeks} Week${music.numWeeks > 1 ? 's' : ''}` : music.repeatType}</Text></View>
+          )}
+          {music.weekDays && music.weekDays.length > 0 && (
+            <View style={styles.detailRow}><Ionicons name="calendar" size={18} color="#0366d6" /><Text style={styles.detailLabel}>Days: </Text><Text style={styles.detailValue}>{music.weekDays.join(', ')}</Text></View>
+          )}
+          {music.medTimes && music.medTimes.length > 0 && (
+            <View style={styles.detailRow}><Ionicons name="time-outline" size={18} color="#0366d6" /><Text style={styles.detailLabel}>Time: </Text><Text style={styles.detailValue}>{music.medTimes.join(', ')}</Text></View>
+          )}
+          {music.instructions && (
+            <View style={styles.instructionsRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="information-circle-outline" size={18} color="#0366d6" />
+                <Text style={styles.detailLabel}>Instructions:</Text>
+              </View>
+              <Text style={styles.instructionsValue}>{music.instructions}</Text>
+            </View>
+          )}
         </View>
-        <View style={styles.cardImageContainer}>
+        <View style={styles.rightColumn}>
           {music.imageUri ? (
-            <Image source={{ uri: music.imageUri }} style={styles.cardImage} />
+            <Image source={{ uri: music.imageUri }} style={styles.iconImage} />
           ) : (
-            <View style={styles.cardImagePlaceholder}>
-              <Ionicons name={type === 'medicine' ? 'medkit' : 'musical-notes'} size={24} color="#0366d6" />
+            <View style={styles.iconPlaceholder}>
+              <Ionicons name={type === 'medicine' ? 'medkit' : 'musical-notes'} size={32} color="#0366d6" />
             </View>
           )}
         </View>
       </View>
-      <View style={styles.cardDetails}>
-        {(music.startDate || music.endDate) && (
-          <View style={styles.cardDetailRow}>
-            <Ionicons name="calendar-outline" size={18} color="#0366d6" />
-            <Text style={styles.cardDetailText}>
-              {formatDate(music.startDate)} - {formatDate(music.endDate)}
-            </Text>
-          </View>
-        )}
-        {music.medTimes && (
-          <View style={styles.cardDetailRow}>
-            <Ionicons name="time-outline" size={18} color="#0366d6" />
-            <Text style={styles.cardDetailText}>
-              {Array.isArray(music.medTimes) ? music.medTimes.join(', ') : music.medTimes}
-            </Text>
-          </View>
-        )}
-        {music.note && (
-          <View style={styles.cardDetailRow}>
-            <Ionicons name="information-circle-outline" size={18} color="#0366d6" />
-            <Text style={styles.cardDetailText}>{music.note}</Text>
-          </View>
-        )}
-      </View>
-      <OutlinedButton style={styles.removeButtonOutlined} onPress={() => onRemove(music.id)}>
-        Remove
-      </OutlinedButton>
+      <TouchableOpacity style={styles.removeButton} onPress={() => onRemove(music.id)}>
+        <Text style={styles.removeButtonText} numberOfLines={1} ellipsizeMode="clip">Remove</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -70,66 +64,91 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     elevation: 0,
     shadowColor: 'transparent',
+    position: 'relative',
   },
-  cardHeader: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
   },
-  cardTitleContainer: {
+  leftColumn: {
     flex: 1,
+    paddingRight: 8,
+    paddingTop: 0,
+    marginTop: 0,
+    marginBottom: 0,
   },
-  cardTitle: {
-    fontSize: 18,
+  rightColumn: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: 80,
+  },
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#222',
+    marginBottom: 2,
   },
-  cardSubtitle: {
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  firstDetailRow: {
+    marginTop: 10,
+  },
+  detailLabel: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    color: '#222',
+    marginLeft: 6,
   },
-  cardImageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    overflow: 'hidden',
-    marginLeft: 12,
+  detailValue: {
+    fontSize: 14,
+    color: '#555',
+    marginLeft: 4,
   },
-  cardImage: {
-    width: '100%',
-    height: '100%',
+  removeButton: {
+    backgroundColor: '#fde8e8',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
   },
-  cardImagePlaceholder: {
-    width: '100%',
-    height: '100%',
+  removeButtonText: {
+    color: '#e53935',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  iconImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginTop: 10,
+  },
+  iconPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#e6f0fa',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
   },
-  cardDetails: {
-    marginTop: 12,
+  instructionsRow: {
+    marginTop: 0,
+    marginBottom: 6,
   },
-  cardDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardDetailText: {
-    marginLeft: 8,
-    fontSize: 11,
-    color: '#666',
-  },
-  removeButtonOutlined: {
-    alignSelf: 'flex-end',
-    marginTop: 14,
-    backgroundColor: '#f2f2f2',
-    color: '#222',
-    borderWidth: 0,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
+  instructionsValue: {
+    fontSize: 15,
+    color: '#555',
+    marginLeft: 24,
+    marginTop: 2,
+    fontWeight: '490',
   },
 });
 

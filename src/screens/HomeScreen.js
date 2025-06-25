@@ -74,7 +74,9 @@ const HomeScreen = () => {
           date: item.booking_date || '',
           startTime: item.start_time || '',
           endTime: item.end_time || '',
-          avatar: defaultAvatar,
+          avatar: item.customer_data?.image && item.customer_data.image.trim() !== '' 
+            ? { uri: item.customer_data.image } 
+            : defaultAvatar,
           completed: false,
         }));
 

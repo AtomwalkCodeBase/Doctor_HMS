@@ -10,6 +10,7 @@ const apiURL = "/api";
 const newApiURL = "/hr_api"
 export const endpoint = `${oldlocalhost}${apiURL}`;
 export const newEndpoint = `${localhost}${newApiURL}`;
+export const newEndpoint2 = `${localhost}${apiURL}`;
 
 export const companyInfoURL = async () => {
   const db_name = await getDbName();
@@ -55,5 +56,5 @@ export const forgetEmpPinURL =  async () => {
 
 export const getbookedList = async () => {
   const db_name = await getDbName();
-  return `${endpoint}/get_facility_booking_list/${db_name}/`;
+  return `${newEndpoint2}/get_facility_booking_list/${db_name}/`;
 }

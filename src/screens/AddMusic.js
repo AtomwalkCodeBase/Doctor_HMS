@@ -47,6 +47,7 @@ const AddMusic = () => {
   const [dropdownPosition, setDropdownPosition] = useState({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const repeatDropdownRef = useRef(null);
 
   useEffect(() => {
     const onKeyboardShow = (e) => {
@@ -162,9 +163,15 @@ const AddMusic = () => {
                 startDate={startDate}
                 onStartDatePress={() => setShowStartPicker(true)}
                 repeatType={repeatType}
-                onRepeatTypePress={(opt) => {
-                  setRepeatType(opt);
-                  setShowRepeatDropdown(false);
+                onRepeatTypePress={() => {
+                  if (repeatDropdownRef.current && repeatDropdownRef.current.measureInWindow) {
+                    repeatDropdownRef.current.measureInWindow((x, y, width, height) => {
+                      setDropdownPosition({ top: y + height, left: x, width });
+                      setShowRepeatDropdown(true);
+                    });
+                  } else {
+                    setShowRepeatDropdown(true);
+                  }
                 }}
                 showRepeatDropdown={showRepeatDropdown}
                 setShowRepeatDropdown={setShowRepeatDropdown}
@@ -212,6 +219,7 @@ const AddMusic = () => {
                 }}
                 saveDisabled={repeatType === 'Weekly' && selectedWeekDays.length === 0}
                 styles={ConfigSectionStyles}
+                repeatDropdownRef={repeatDropdownRef}
               />
             ) : (
               <TouchableOpacity
