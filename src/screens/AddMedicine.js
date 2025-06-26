@@ -9,9 +9,12 @@ import ConfigSectionStyles from '../components/ConfigSectionStyles';
 import FormLabel from '../components/FormLabel';
 import RoundedTextInput from '../components/RoundedTextInput';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { Alert } from 'react-native';
 
 const MED_TIMES = ['Morning', 'Noon', 'Evening', 'Night'];
-const FOOD_OPTIONS = ['After Food', 'Before Food'];
+// const FOOD_OPTIONS = ['After Food', 'Before Food'];
 const REPEAT_OPTIONS = ['Daily', 'Weekly', 'Monthly'];
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -43,6 +46,8 @@ const AddMedicine = () => {
   const [showRepeatDropdown, setShowRepeatDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({});
   const repeatAnchorRef = useRef(null);
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const toggleMedTime = (time) => {
     setMedTimes((prev) =>
@@ -124,6 +129,66 @@ const AddMedicine = () => {
     setMedicines(medicines.filter(medicine => medicine.id !== id));
   };
 
+  // Permissions for camera
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera permission is required to take a photo.');
+      return false;
+    }
+    return true;
+  };
+
+  // Permissions for media library
+  const requestMediaLibraryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Media library permission is required to select an image.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleTakePhoto = async () => {
+    setShowFileModal(false);
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setSelectedFile({ type: 'image', uri: result.assets[0].uri, name: result.assets[0].fileName || 'photo.jpg' });
+    }
+  };
+
+  const handleChooseImage = async () => {
+    setShowFileModal(false);
+    const hasPermission = await requestMediaLibraryPermission();
+    if (!hasPermission) return;
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setSelectedFile({ type: 'image', uri: result.assets[0].uri, name: result.assets[0].fileName || 'image.jpg' });
+    }
+  };
+
+  const handlePickPDF = async () => {
+    setShowFileModal(false);
+    let result = await DocumentPicker.getDocumentAsync({
+      type: 'application/pdf',
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (result.type === 'success') {
+      setSelectedFile({ type: 'pdf', uri: result.uri, name: result.name });
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* Header */}
@@ -154,6 +219,33 @@ const AddMedicine = () => {
           contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 48, flexGrow: 1, justifyContent: 'flex-start' }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Upload File Button Row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 0 }}>
+            {selectedFile && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, maxWidth: 160 }}>
+                {selectedFile.type === 'pdf' && (
+                  <MaterialCommunityIcons name="file-pdf-box" size={22} color="#d32f2f" style={{ marginRight: 4 }} />
+                )}
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: selectedFile.type === 'pdf' ? '#d32f2f' : '#222',
+                    maxWidth: 120,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {selectedFile.name}
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity
+              style={styles.uploadFileBtn}
+              onPress={() => setShowFileModal(true)}
+            >
+              <Text style={styles.uploadFileBtnText}>Upload File</Text>
+            </TouchableOpacity>
+          </View>
           {/* Medication Name */}
           <View style={styles.rowBetween}>
             <Text style={styles.label}>Medication Name</Text>
@@ -382,6 +474,28 @@ const AddMedicine = () => {
           </View>
         </TouchableOpacity>
       )}
+      {/* File Upload Action Sheet/Modal */}
+      <Modal
+        visible={showFileModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFileModal(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowFileModal(false)}>
+          <View style={styles.fileModalContainer}>
+            <Text style={styles.fileModalTitle}>Select File Type</Text>
+            <TouchableOpacity style={styles.fileModalOption} onPress={handleTakePhoto}>
+              <Text style={styles.fileModalOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.fileModalOption} onPress={handleChooseImage}>
+              <Text style={styles.fileModalOptionText}>Choose Image from Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.fileModalOption} onPress={handlePickPDF}>
+              <Text style={styles.fileModalOptionText}>Select PDF Document</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -440,14 +554,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 0,
+    marginBottom: 0,
   },
   label: {
     fontSize: 17,
     fontWeight: 'bold',
     color: '#222',
-    marginTop: 12,
+    marginTop: 0,
   },
   input: {
     borderWidth: 1,
@@ -535,6 +649,60 @@ const styles = StyleSheet.create({
   dropdownOptionText: {
     fontSize: 15,
     color: '#0366d6',
+  },
+  uploadFileBtn: {
+    backgroundColor: '#0366d6',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignSelf: 'flex-end',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    marginTop: 8,
+    marginBottom: 0,
+  },
+  uploadFileBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+    letterSpacing: 0.2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 24,
+    width: 300,
+    alignItems: 'stretch',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fileModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 18,
+    color: '#222',
+    textAlign: 'center',
+  },
+  fileModalOption: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  fileModalOptionText: {
+    fontSize: 16,
+    color: '#0366d6',
+    textAlign: 'center',
   },
 });
 

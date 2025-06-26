@@ -74,6 +74,14 @@ const HomeScreen = () => {
           date: item.booking_date || '',
           startTime: item.start_time || '',
           endTime: item.end_time || '',
+          customer_id: item.customer_data?.id || null,
+          equipment_id: item.equipment_data?.id || null,
+          booking_date: item.booking_date || '',
+          start_time: item.start_time || '',
+          end_time: item.end_time || '',
+          duration: item.duration || '',
+          booking_id: item.booking_id || '',
+          remarks: item.remarks || '',
           avatar: item.customer_data?.image && item.customer_data.image.trim() !== '' 
             ? { uri: item.customer_data.image } 
             : defaultAvatar,
@@ -139,7 +147,15 @@ const HomeScreen = () => {
       params: {
         patientName: appointment.name,
         appointmentTime: `${appointment.startTime} - ${appointment.endTime}`,
-        appointmentDate: appointment.date
+        appointmentDate: appointment.date,
+        customer_id: appointment.customer_id,
+        equipment_id: appointment.equipment_id,
+        booking_date: appointment.booking_date,
+        start_time: appointment.start_time,
+        end_time: appointment.end_time,
+        duration: appointment.duration,
+        booking_id: appointment.booking_id,
+        remarks: appointment.remarks
       }
     });
   };
@@ -193,6 +209,7 @@ const HomeScreen = () => {
             <AppointmentCard
               key={idx}
               name={appt.name}
+              id={appt.customer_id}
               date={appt.date}
               time={`${appt.startTime} - ${appt.endTime}`}
               avatar={appt.avatar}

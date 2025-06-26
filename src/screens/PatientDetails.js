@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import CustomStatusBar from '../components/StatusBar';
 import VitalCard from '../components/VitalCard';
 import ActionButton from '../components/ActionButton';
 import Header from '../components/Header';
+import { processBookingData } from '../services/productServices';
 
 const PatientDetails = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [isPressed, setIsPressed] = useState(false);
+  const [symptoms, setSymptoms] = useState('');
+  const [prescriptionName, setPrescriptionName] = useState('');
 
   return (
     <View style={styles.container}>
@@ -25,6 +28,11 @@ const PatientDetails = () => {
             style={styles.avatar}
           />
           <Text style={styles.patientName}>{params.patientName || 'Unknown'}</Text>
+          
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={20} color="#6B7280" />
+            <Text style={styles.infoText}>ID: {params.customer_id || 'N/A'}</Text>
+          </View>
           
           <View style={styles.infoRow}>
             <Ionicons name="calendar-outline" size={20} color="#6B7280" />
@@ -74,6 +82,18 @@ const PatientDetails = () => {
           />
         </ScrollView>
 
+        {/* Prescription Name */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Prescription Name</Text>
+          <TextInput
+            style={styles.prescriptionInput}
+            placeholder="Enter prescription name..."
+            placeholderTextColor="#9CA3AF"
+            value={prescriptionName}
+            onChangeText={setPrescriptionName}
+          />
+        </View>
+
         {/* Issue/Symptoms */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Issue / Symptoms</Text>
@@ -82,6 +102,8 @@ const PatientDetails = () => {
             multiline
             placeholder="Enter patient symptoms..."
             placeholderTextColor="#9CA3AF"
+            value={symptoms}
+            onChangeText={setSymptoms}
           />
         </View>
 
@@ -110,7 +132,7 @@ const PatientDetails = () => {
             <ActionButton
               icon="flask-outline"
               label="Order Tests"
-              onPress={() => {}}
+              onPress={() => router.push('/OrderTest')}
             />
             <ActionButton
               icon="document-text-outline"
@@ -128,6 +150,27 @@ const PatientDetails = () => {
           ]} 
           onPressIn={() => setIsPressed(true)}
           onPressOut={() => setIsPressed(false)}
+          onPress={async () => {
+            try {
+              const booking_data = {
+                customer_id: params.customer_id,
+                equipment_id: params.equipment_id,
+                booking_date: params.booking_date,
+                start_time: params.start_time,
+                end_time: params.end_time,
+                duration: params.duration,
+                call_mode: 'COMPLETE',
+                status: 'COMPLETE',
+                remarks: symptoms,
+                booking_id: params.booking_id,
+              };
+              console.log('Booking Data to POST:', booking_data);
+              await processBookingData(booking_data);
+              Alert.alert('Success', 'Booking marked as complete!');
+            } catch (err) {
+              Alert.alert('Error', 'Failed to complete booking.');
+            }
+          }}
           activeOpacity={1}
         >
           <Text style={[
@@ -194,6 +237,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#111827',
     marginBottom: 12,
+  },
+  prescriptionInput: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    height: 40,
+    fontSize: 16,
   },
   symptomsInput: {
     backgroundColor: '#fff',

@@ -15,6 +15,7 @@ const AppProvider = ({ children }) => {
     const [companyInfo, setCompanyInfo] = useState(null);
     const [dbName, setDbName] = useState(null);
     const [isConnected, setIsConnected] = useState(true);
+    const [customerId, setCustomerId] = useState(null);
 
     const router = useRouter();
 
@@ -195,7 +196,9 @@ const AppProvider = ({ children }) => {
             dbName,
             isConnected,
             checkNetwork,
-            setIsLoading
+            setIsLoading,
+            customerId,
+            setCustomerId,
         }}>
             {children}
             <NetworkErrorModal 
