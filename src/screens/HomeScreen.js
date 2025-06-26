@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, TextInput } from 'react-native';
 import ProgressBar from '../components/ProgressBar';
 import AppointmentCard from '../components/AppointmentCard';
@@ -9,6 +9,7 @@ import { getProfileInfo } from '../services/authServices';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Drawer from '../components/Drawer';
+import { useIsFocused } from '@react-navigation/native';
 
 const defaultAvatar = require('../../assets/images/UserIcon.png');
 
@@ -18,128 +19,157 @@ const HomeScreen = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [progressInfo, setProgressInfo] = useState({ completed: 0, total: 0 });
+
+  const isFocused = useIsFocused();
+
+  const fetchAppointments = useCallback(async () => {
+    try {
+      // First try to get employee name from AsyncStorage
+      let employeeName = await AsyncStorage.getItem('profilename');
+      
+      // If not in AsyncStorage, try to fetch from API
+      if (!employeeName) {
+        try {
+          const profileResponse = await getProfileInfo();
+          employeeName = profileResponse?.data?.[0]?.name;
+          
+          // If we got the name from API, store it
+          if (employeeName) {
+            await AsyncStorage.setItem('profilename', employeeName);
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      }
+      
+      if (!employeeName) {
+        console.error('Could not get employee name');
+        setLoading(false);
+        return;
+      }
+
+      const response = await getbookedlistview(false);
+      let bookings = response.data || response || [];
+      if (!Array.isArray(bookings) && Array.isArray(response)) {
+        bookings = response;
+      }
+
+      // console.log('Fetched bookings:', bookings);
+
+      // Get today's date in DD-MM-YYYY format
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = today.getFullYear();
+      const todayString = `${day}-${month}-${year}`;
+
+      const filtered = bookings.filter(item => {
+        // Check if it's a valid booking with required data
+        if (!item.equipment_data || !item.customer_data || !item.booking_date) {
+          return false;
+        }
+
+        // Check if equipment name matches employee name and booking date matches today
+        return item.equipment_data.name === employeeName && item.booking_date === todayString;
+      });
+
+      const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
+      const getDisplayStatus = (statusDisplay) => {
+        if (!statusDisplay) return 'Pending';
+        if (statusDisplay.toLowerCase() === 'booked') return 'Pending';
+        return capitalizeFirst(statusDisplay);
+      };
+
+      const mapped = filtered.map(item => ({
+        name: item.customer_data?.name || 'Unknown',
+        date: item.booking_date || '',
+        startTime: item.start_time || '',
+        endTime: item.end_time || '',
+        customer_id: item.customer_data?.id || null,
+        equipment_id: item.equipment_data?.id || null,
+        booking_date: item.booking_date || '',
+        start_time: item.start_time || '',
+        end_time: item.end_time || '',
+        duration: item.duration || '',
+        booking_id: item.booking_id || '',
+        remarks: item.remarks || '',
+        avatar: item.customer_data?.image && item.customer_data.image.trim() !== '' 
+          ? { uri: item.customer_data.image } 
+          : defaultAvatar,
+        completed: item.status_display && item.status_display.toLowerCase() === 'completed',
+        status: [getDisplayStatus(item.status_display)],
+      }));
+
+      // console.log('Mapped appointments:', mapped);
+
+      // Convert 24-hour format to 12-hour format
+      const convertTo12Hour = (time24) => {
+        if (!time24) return '';
+        const [hours, minutes] = time24.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes}${ampm}`;
+      };
+
+      // Format date from DD-MM-YYYY to DD Month, YYYY
+      const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const [day, month, year] = dateStr.split('-');
+        const months = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        return `${day} ${months[parseInt(month) - 1]}, ${year}`;
+      };
+
+      // Sort appointments by status (Pending first, then Completed, then others), then by start time
+      const statusOrder = (statusArr) => {
+        const status = statusArr && statusArr[0] ? statusArr[0].toLowerCase() : '';
+        if (status === 'pending') return 0;
+        if (status === 'completed') return 1;
+        return 2;
+      };
+
+      // Sort by status first, then by start time
+      const sortedAppointments = mapped.sort((a, b) => {
+        const statusDiff = statusOrder(a.status) - statusOrder(b.status);
+        if (statusDiff !== 0) return statusDiff;
+        // If same status, sort by start time
+        const convertToMinutes = (time) => {
+          const [hours, minutes] = time.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+        return convertToMinutes(a.startTime) - convertToMinutes(b.startTime);
+      });
+
+      // Convert times to 12-hour format and format date after sorting
+      const formattedAppointments = sortedAppointments.map(appt => ({
+        ...appt,
+        startTime: convertTo12Hour(appt.startTime),
+        endTime: convertTo12Hour(appt.endTime),
+        date: formatDate(appt.date)
+      }));
+
+      setAppointments(formattedAppointments);
+      // Calculate completed and total appointments for progress bar
+      const totalAppointments = formattedAppointments.length;
+      const completedAppointments = formattedAppointments.filter(appt => appt.completed).length;
+      setProgressInfo({ completed: completedAppointments, total: totalAppointments });
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        // First try to get employee name from AsyncStorage
-        let employeeName = await AsyncStorage.getItem('profilename');
-        
-        // If not in AsyncStorage, try to fetch from API
-        if (!employeeName) {
-          try {
-            const profileResponse = await getProfileInfo();
-            employeeName = profileResponse?.data?.[0]?.name;
-            
-            // If we got the name from API, store it
-            if (employeeName) {
-              await AsyncStorage.setItem('profilename', employeeName);
-            }
-          } catch (error) {
-            console.error('Error fetching profile:', error);
-          }
-        }
-        
-        if (!employeeName) {
-          console.error('Could not get employee name');
-          setLoading(false);
-          return;
-        }
-
-        const response = await getbookedlistview(false);
-        let bookings = response.data || response || [];
-        if (!Array.isArray(bookings) && Array.isArray(response)) {
-          bookings = response;
-        }
-
-        // Get today's date in DD-MM-YYYY format
-        const today = new Date();
-        const day = String(today.getDate()).padStart(2, '0');
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const year = today.getFullYear();
-        const todayString = `${day}-${month}-${year}`;
-
-        const filtered = bookings.filter(item => {
-          // Check if it's a valid booking with required data
-          if (!item.equipment_data || !item.customer_data || !item.booking_date) {
-            return false;
-          }
-
-          // Check if equipment name matches employee name and booking date matches today
-          return item.equipment_data.name === employeeName && item.booking_date === todayString;
-        });
-
-        const mapped = filtered.map(item => ({
-          name: item.customer_data?.name || 'Unknown',
-          date: item.booking_date || '',
-          startTime: item.start_time || '',
-          endTime: item.end_time || '',
-          customer_id: item.customer_data?.id || null,
-          equipment_id: item.equipment_data?.id || null,
-          booking_date: item.booking_date || '',
-          start_time: item.start_time || '',
-          end_time: item.end_time || '',
-          duration: item.duration || '',
-          booking_id: item.booking_id || '',
-          remarks: item.remarks || '',
-          avatar: item.customer_data?.image && item.customer_data.image.trim() !== '' 
-            ? { uri: item.customer_data.image } 
-            : defaultAvatar,
-          completed: false,
-        }));
-
-        // Convert 24-hour format to 12-hour format
-        const convertTo12Hour = (time24) => {
-          if (!time24) return '';
-          const [hours, minutes] = time24.split(':');
-          const hour = parseInt(hours);
-          const ampm = hour >= 12 ? 'PM' : 'AM';
-          const hour12 = hour % 12 || 12;
-          return `${hour12}:${minutes}${ampm}`;
-        };
-
-        // Format date from DD-MM-YYYY to DD Month, YYYY
-        const formatDate = (dateStr) => {
-          if (!dateStr) return '';
-          const [day, month, year] = dateStr.split('-');
-          const months = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
-          ];
-          return `${day} ${months[parseInt(month) - 1]}, ${year}`;
-        };
-
-        // Sort appointments by start time (24-hour format)
-        const sortedAppointments = mapped.sort((a, b) => {
-          const timeA = a.startTime;
-          const timeB = b.startTime;
-          
-          // Convert time string to minutes for comparison
-          const convertToMinutes = (time) => {
-            const [hours, minutes] = time.split(':').map(Number);
-            return hours * 60 + minutes;
-          };
-
-          return convertToMinutes(timeA) - convertToMinutes(timeB);
-        });
-
-        // Convert times to 12-hour format and format date after sorting
-        const formattedAppointments = sortedAppointments.map(appt => ({
-          ...appt,
-          startTime: convertTo12Hour(appt.startTime),
-          endTime: convertTo12Hour(appt.endTime),
-          date: formatDate(appt.date)
-        }));
-
-        setAppointments(formattedAppointments);
-      } catch (error) {
-        console.error('Failed to fetch appointments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAppointments();
-  }, []);
+    if (isFocused) {
+      fetchAppointments();
+    }
+  }, [isFocused, fetchAppointments]);
 
   const handleSeeDetails = (appointment) => {
     router.push({
@@ -155,7 +185,8 @@ const HomeScreen = () => {
         end_time: appointment.end_time,
         duration: appointment.duration,
         booking_id: appointment.booking_id,
-        remarks: appointment.remarks
+        remarks: appointment.remarks,
+        avatarUrl: appointment.avatar && appointment.avatar.uri ? appointment.avatar.uri : null,
       }
     });
   };
@@ -197,7 +228,7 @@ const HomeScreen = () => {
           </View>
         </View>
       </View>
-      <ProgressBar completed={2} total={6} />
+      <ProgressBar completed={progressInfo.completed} total={progressInfo.total} />
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         <Text style={styles.sectionTitle}>Today's Appointments</Text>
         {loading ? (
@@ -214,6 +245,7 @@ const HomeScreen = () => {
               time={`${appt.startTime} - ${appt.endTime}`}
               avatar={appt.avatar}
               completed={appt.completed}
+              status={appt.status}
               onPress={() => handleSeeDetails(appt)}
             />
           ))

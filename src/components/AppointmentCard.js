@@ -3,30 +3,40 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const STATUS_COLORS = {
+  Completed: "#22C55E", // Green
+  Pending: "#F59E42",  // Orange
   "Needs Attention": "#ffe066",
   critical: "#ff6b6b",
   Stable: "#8DD8FF",
   "Round Completed": "#4ade80",
 };
 
+const STATUS_TEXT_COLORS = {
+  Completed: "#fff",
+  Pending: "#fff",
+};
+
 const StatusBadge = ({ label }) => (
-  <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[label] || "#eee" }]}> 
-    <Text style={[styles.statusBadgeText, { color: label === "critical" ? "#fff" : "#222" }]}>{label}</Text>
+  <View style={[
+    styles.statusBadge,
+    { backgroundColor: STATUS_COLORS[label] || "#eee" }
+  ]}>
+    <Text style={[
+      styles.statusBadgeText,
+      { color: STATUS_TEXT_COLORS[label] || "#222" }
+    ]}>
+      {label}
+    </Text>
   </View>
 );
 
 const AppointmentCard = ({ id, name, date, time, avatar, completed, onPress, status }) => (
   <View style={styles.card}>
     <View style={{ flex: 1 }}>
-      {/* Status Badges */}
-      {status && Array.isArray(status) && status.length > 0 && (
-        <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-          {status.map((s, idx) => (
-            <StatusBadge key={idx} label={s} />
-          ))}
-        </View>
-      )}
-      <Text style={styles.name}>{name}</Text>
+      {/* Name Row (without Status Badge) */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <Text style={styles.name}>{name}</Text>
+      </View>
       {/* Patient ID */}
       {id && (
         <Text style={styles.idText}>ID: {id}</Text>
@@ -44,7 +54,13 @@ const AppointmentCard = ({ id, name, date, time, avatar, completed, onPress, sta
         </TouchableOpacity>
       )}
     </View>
-    <Image source={avatar} style={styles.avatar} />
+    {/* Avatar and Status Badge Column */}
+    <View style={styles.avatarColumn}>
+      {status && Array.isArray(status) && status.length > 0 && (
+        <StatusBadge label={status[0]} />
+      )}
+      <Image source={avatar} style={styles.avatar} />
+    </View>
   </View>
 );
 
@@ -92,6 +108,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignSelf: 'flex-start',
+    marginTop: 16,
   },
   detailsText: {
     color: '#111',
@@ -106,6 +123,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignSelf: 'flex-start',
+    marginTop: 16,
   },
   completedText: {
     color: '#217A39',
@@ -119,17 +137,28 @@ const styles = StyleSheet.create({
     marginLeft: 24,
     backgroundColor: '#f5e3d7',
   },
+  avatarColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    marginLeft: 24,
+  },
   statusBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginRight: 6,
-    marginBottom: 2,
-    alignSelf: "flex-start",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    alignSelf: "flex-end",
+    marginLeft: 'auto',
+    marginBottom: 8,
+    marginTop: -6,
+    minWidth: 80,
+    alignItems: 'center',
   },
   statusBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "bold",
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
 });
 

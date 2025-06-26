@@ -76,8 +76,14 @@ const PatientDetails = () => {
       copyToCacheDirectory: true,
       multiple: false,
     });
-    if (result.type === 'success') {
-      setSelectedFile({ type: 'pdf', uri: result.uri, name: result.name });
+    // console.log('PDF Picker Result:', result);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const file = result.assets[0];
+      setSelectedFile({
+        type: 'pdf',
+        uri: file.uri,
+        name: file.name || (file.uri ? file.uri.split('/').pop() : 'Document.pdf'),
+      });
     }
   };
 
@@ -88,99 +94,110 @@ const PatientDetails = () => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Patient Info */}
-        <View style={styles.patientInfo}>
+        <View style={styles.patientInfoSection}>
           <Image
-            source={require('../../assets/images/UserIcon.png')}
+            source={params.avatarUrl ? { uri: params.avatarUrl } : require('../../assets/images/UserIcon.png')}
             style={styles.avatar}
           />
-          <Text style={styles.patientName}>{params.patientName || 'Unknown'}</Text>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="person-outline" size={20} color="#6B7280" />
-            <Text style={styles.infoText}>ID: {params.customer_id || 'N/A'}</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-            <Text style={styles.infoText}>{params.appointmentDate || 'No date'}</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={20} color="#6B7280" />
-            <Text style={styles.infoText}>{params.appointmentTime || 'No time'}</Text>
+          <View style={styles.patientInfoTextCol}>
+            <Text style={styles.patientName}>{params.patientName || 'Unknown'}</Text>
+            <View style={styles.infoRow}>
+              <Ionicons name="person-outline" size={18} color="#6B7280" style={styles.infoIcon} />
+              <Text style={styles.infoText}>ID: {params.customer_id || 'N/A'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Ionicons name="calendar-outline" size={18} color="#6B7280" style={styles.infoIcon} />
+              <Text style={styles.infoText}>Date: {params.appointmentDate || 'No date'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Ionicons name="time-outline" size={18} color="#6B7280" style={styles.infoIcon} />
+              <Text style={styles.infoText}>Time: {params.appointmentTime || 'No time'}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Vitals Summary */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.vitalsContainer}
-          contentContainerStyle={{ paddingLeft: 16, paddingRight: 8 }}
-        >
-          <VitalCard
-            icon="heart"
-            label="Heart Rate"
-            value="72 bpm"
-            iconColor="#EF4444"
-            backgroundColor="#fff"
-          />
-          <VitalCard
-            icon="thermometer"
-            label="Temperature"
-            value="98.6°F"
-            iconColor="#F59E0B"
-            backgroundColor="#fff"
-          />
-          <VitalCard
-            icon="water"
-            label="BP"
-            value="120/80"
-            iconColor="#3B82F6"
-            backgroundColor="#fff"
-          />
-          <VitalCard
-            icon="pulse"
-            label="SpO2"
-            value="98%"
-            iconColor="#10B981"
-            backgroundColor="#fff"
-          />
-        </ScrollView>
-
-        {/* Upload File Button Row */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 8, marginRight: 16 }}>
-          {selectedFile && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, maxWidth: 160 }}>
-              {selectedFile.type === 'pdf' && (
-                <MaterialCommunityIcons name="file-pdf-box" size={22} color="#d32f2f" style={{ marginRight: 4 }} />
-              )}
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: selectedFile.type === 'pdf' ? '#d32f2f' : '#222',
-                  maxWidth: 120,
-                }}
-                numberOfLines={1}
-                ellipsizeMode="middle"
-              >
-                {selectedFile.name}
-              </Text>
-            </View>
-          )}
-          <TouchableOpacity
-            style={styles.uploadFileBtn}
-            onPress={() => setShowFileModal(true)}
+        {/* Vitals Summary - Exactly like previous version */}
+        <View style={styles.vitalsOuterContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.vitalsScrollView}
+            contentContainerStyle={styles.vitalsContentContainer}
           >
-            <Text style={styles.uploadFileBtnText}>Upload File</Text>
-          </TouchableOpacity>
+            <VitalCard
+              icon="heart"
+              label="Heart Rate"
+              value="72 bpm"
+              iconColor="#EF4444"
+              backgroundColor="#fff"
+            />
+            <VitalCard
+              icon="thermometer"
+              label="Temperature"
+              value="98.6°F"
+              iconColor="#F59E0B"
+              backgroundColor="#fff"
+            />
+            <VitalCard
+              icon="water"
+              label="BP"
+              value="120/80"
+              iconColor="#3B82F6"
+              backgroundColor="#fff"
+            />
+            <VitalCard
+              icon="pulse"
+              label="SpO2"
+              value="98%"
+              iconColor="#10B981"
+              backgroundColor="#fff"
+            />
+          </ScrollView>
+        </View>
+
+        {/* Document Upload Section */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Upload Document</Text>
+          <View style={styles.uploadSection}>
+            {selectedFile ? (
+              <View style={styles.selectedFileContainer}>
+                {selectedFile.type === 'pdf' ? (
+                  <MaterialCommunityIcons name="file-pdf-box" size={24} color="#d32f2f" />
+                ) : (
+                  <MaterialCommunityIcons name="image" size={24} color="#4CAF50" />
+                )}
+                <Text style={styles.selectedFileName} numberOfLines={1} ellipsizeMode="middle">
+                  {selectedFile.name}
+                </Text>
+                <TouchableOpacity onPress={() => setSelectedFile(null)}>
+                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.uploadPlaceholder}
+                onPress={() => setShowFileModal(true)}
+              >
+                <Ionicons name="cloud-upload-outline" size={32} color="#0366d6" />
+                <Text style={styles.uploadPlaceholderText}>Tap to upload document</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={() => setShowFileModal(true)}
+            >
+              <Text style={styles.uploadButtonText}>
+                {selectedFile ? 'Change File' : 'Select File'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Prescription Name */}
-        <View style={styles.section}>
+        <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Prescription Name</Text>
           <TextInput
-            style={styles.prescriptionInput}
+            style={styles.input}
             placeholder="Enter prescription name..."
             placeholderTextColor="#9CA3AF"
             value={prescriptionName}
@@ -189,10 +206,10 @@ const PatientDetails = () => {
         </View>
 
         {/* Remarks */}
-        <View style={styles.section}>
+        <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Remarks</Text>
           <TextInput
-            style={styles.symptomsInput}
+            style={[styles.input, styles.remarksInput]}
             multiline
             placeholder="Enter remarks..."
             placeholderTextColor="#9CA3AF"
@@ -202,101 +219,99 @@ const PatientDetails = () => {
         </View>
 
         {/* Action Buttons Grid */}
-        <View style={styles.actionGrid}>
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon="add-circle-outline"
-              label="Add Tasks"
-              onPress={() => router.push({
-                pathname: '/AddTask',
-                params: {
-                  patientName: params.patientName,
-                  appointmentTime: params.appointmentTime,
-                  appointmentDate: params.appointmentDate,
-                },
-              })}
-            />
-            <ActionButton
-              icon="list-outline"
-              label="View Tasks"
-              onPress={() => {}}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon="flask-outline"
-              label="Order Tests"
-              onPress={() => router.push('/OrderTest')}
-            />
-            <ActionButton
-              icon="document-text-outline"
-              label="Test Results"
-              onPress={() => {}}
-            />
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionGrid}>
+            <View style={styles.actionRow}>
+              <ActionButton
+                icon="add-circle-outline"
+                label="Add Tasks"
+                onPress={() => router.push({
+                  pathname: '/AddTask',
+                  params: {
+                    patientName: params.patientName,
+                    appointmentTime: params.appointmentTime,
+                    appointmentDate: params.appointmentDate,
+                  },
+                })}
+              />
+              <ActionButton
+                icon="list-outline"
+                label="View Tasks"
+                onPress={() => {}}
+              />
+            </View>
+            <View style={styles.actionRow}>
+              <ActionButton
+                icon="flask-outline"
+                label="Order Tests"
+                onPress={() => router.push('/OrderTest')}
+              />
+              <ActionButton
+                icon="document-text-outline"
+                label="Test Results"
+                onPress={() => {}}
+              />
+            </View>
           </View>
         </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity 
-          style={[
-            styles.submitButton,
-            isPressed && styles.submitButtonPressed,
-            (!prescriptionName || !selectedFile) && { opacity: 0.5 }
-          ]} 
-          onPressIn={() => setIsPressed(true)}
-          onPressOut={() => setIsPressed(false)}
-          onPress={async () => {
-            if (!prescriptionName || !selectedFile) return;
-            try {
-              // 1. Send processBookingData (without remarks)
-              const booking_data = {
-                customer_id: params.customer_id,
-                equipment_id: params.equipment_id,
-                booking_date: params.booking_date,
-                start_time: params.start_time,
-                end_time: params.end_time,
-                duration: params.duration,
-                call_mode: 'COMPLETE',
-                status: 'COMPLETE',
-                booking_id: params.booking_id,
-              };
-              // console.log('Sending processBookingData:', booking_data);
-              const bookingRes = await processBookingData(booking_data);
-              // console.log('processBookingData response:', bookingRes);
-
-              // 2. Send uploadDocumentData
-              if (selectedFile && prescriptionName) {
-                const document_data = {
-                  call_mode: 'ADD_DOCUMENT',
-                  document_id: 1,
+        {/* Submit Button with proper spacing */}
+        <View style={styles.submitButtonContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.submitButton,
+              isPressed && styles.submitButtonPressed,
+              (!prescriptionName || !selectedFile) && styles.submitButtonDisabled
+            ]} 
+            onPressIn={() => setIsPressed(true)}
+            onPressOut={() => setIsPressed(false)}
+            onPress={async () => {
+              if (!prescriptionName || !selectedFile) return;
+              try {
+                const booking_data = {
                   customer_id: params.customer_id,
-                  doc_file: selectedFile,
-                  document_name: prescriptionName,
-                  remarks: remarks,
+                  equipment_id: params.equipment_id,
+                  booking_date: params.booking_date,
+                  start_time: params.start_time,
+                  end_time: params.end_time,
+                  duration: params.duration,
+                  call_mode: 'COMPLETE',
+                  status: 'COMPLETE',
+                  booking_id: params.booking_id,
                 };
-                // console.log('Sending uploadDocumentData:', document_data);
-                const uploadRes = await uploadDocumentData(document_data);
-                // console.log('uploadDocumentData response:', uploadRes);
-              } else {
-                console.log('Skipping uploadDocumentData: selectedFile or prescriptionName missing');
-              }
+                // console.log('Submitting booking_data:', booking_data);
+                const bookingRes = await processBookingData(booking_data);
+                // console.log('processBookingData response:', bookingRes);
 
-              setSuccessModalVisible(true);
-            } catch (err) {
-              console.log('Error in Submit handler:', err);
-              Alert.alert('Error', 'Failed to complete booking or upload document.');
-            }
-          }}
-          activeOpacity={1}
-          disabled={!prescriptionName || !selectedFile}
-        >
-          <Text style={[
-            styles.submitButtonText,
-            isPressed && styles.submitButtonTextPressed
-          ]}>
-            Submit
-          </Text>
-        </TouchableOpacity>
+                if (selectedFile && prescriptionName) {
+                  const document_data = {
+                    call_mode: 'ADD_DOCUMENT',
+                    document_id: 1,
+                    customer_id: params.customer_id,
+                    doc_file: selectedFile,
+                    document_name: prescriptionName,
+                    remarks: remarks,
+                  };
+                  // console.log('Submitting document_data:', document_data);
+                  const uploadRes = await uploadDocumentData(document_data);
+                  // console.log('uploadDocumentData response:', uploadRes);
+                }
+
+                setSuccessModalVisible(true);
+              } catch (err) {
+                // console.log('Error in Submit handler:', err);
+                Alert.alert('Error', 'Failed to complete booking or upload document.');
+              }
+            }}
+            activeOpacity={0.8}
+            disabled={!prescriptionName || !selectedFile}
+          >
+            <Text style={styles.submitButtonText}>
+              Submit
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* File Upload Action Sheet/Modal */}
@@ -310,13 +325,16 @@ const PatientDetails = () => {
           <View style={styles.fileModalContainer}>
             <Text style={styles.fileModalTitle}>Select File Type</Text>
             <TouchableOpacity style={styles.fileModalOption} onPress={handleTakePhoto}>
+              <Ionicons name="camera-outline" size={20} color="#0366d6" style={styles.fileModalOptionIcon} />
               <Text style={styles.fileModalOptionText}>Take Photo</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.fileModalOption} onPress={handleChooseImage}>
-              <Text style={styles.fileModalOptionText}>Choose Image from Gallery</Text>
+              <Ionicons name="image-outline" size={20} color="#0366d6" style={styles.fileModalOptionIcon} />
+              <Text style={styles.fileModalOptionText}>Choose Image</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.fileModalOption} onPress={handlePickPDF}>
-              <Text style={styles.fileModalOptionText}>Select PDF Document</Text>
+              <MaterialCommunityIcons name="file-pdf-box" size={20} color="#d32f2f" style={styles.fileModalOptionIcon} />
+              <Text style={styles.fileModalOptionText}>Select PDF</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -326,7 +344,7 @@ const PatientDetails = () => {
         visible={successModalVisible}
         onClose={() => {
           setSuccessModalVisible(false);
-          router.push('/home');
+          router.push({ pathname: '/home', params: { refresh: Date.now() } });
         }}
         message="Booking and document uploaded!"
       />
@@ -337,160 +355,217 @@ const PatientDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F9FAFB',
   },
   scrollView: {
     flex: 1,
   },
-  patientInfo: {
-    padding: 16,
+  patientInfoSection: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    marginBottom: 12,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    margin: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 12,
+    backgroundColor: '#E5E7EB',
+    marginRight: 16,
+  },
+  patientInfoTextCol: {
+    flex: 1,
   },
   patientName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#111827',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: 4,
+  },
+  infoIcon: {
+    marginRight: 8,
   },
   infoText: {
-    marginLeft: 8,
+    fontSize: 14,
     color: '#6B7280',
-    fontSize: 16,
   },
-  vitalsContainer: {
+  // Vitals section - exactly like previous version
+  vitalsOuterContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  vitalsScrollView: {
     flexDirection: 'row',
-    paddingTop: 16,
-    paddingBottom: 8,
-    marginTop: 0,
+    paddingTop: 2,
+    paddingBottom: 1,
   },
-  section: {
+  vitalsContentContainer: {
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  // Rest of the styles
+  sectionContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 16,
-    marginTop: -8,
-    marginBottom: -16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0366d6',
     marginBottom: 12,
   },
-  prescriptionInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 12,
-    height: 60,
-    fontSize: 16,
+  uploadSection: {
+    marginTop: 8,
   },
-  symptomsInput: {
-    backgroundColor: '#fff',
+  uploadPlaceholder: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 12,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  uploadPlaceholderText: {
+    color: '#6B7280',
+    marginTop: 8,
+    fontSize: 14,
+  },
+  selectedFileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
     padding: 12,
-    height: 120,
+    marginBottom: 12,
+  },
+  selectedFileName: {
+    flex: 1,
+    marginLeft: 8,
+    marginRight: 8,
+    color: '#374151',
+    fontSize: 14,
+  },
+  uploadButton: {
+    backgroundColor: '#0366d6',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  uploadButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 14,
+    color: '#111827',
+  },
+  remarksInput: {
+    height: 100,
     textAlignVertical: 'top',
-    fontSize: 16,
   },
   actionGrid: {
-    padding: 16,
-    marginTop: 0,
-    paddingBottom: 8,
+    marginTop: 8,
   },
   actionRow: {
     flexDirection: 'row',
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  submitButtonContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    marginTop: 8,
   },
   submitButton: {
-    margin: 16,
-    marginTop: 0,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
+    backgroundColor: '#0366d6',
+    borderRadius: 10,
     padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0366d6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   submitButtonPressed: {
-    backgroundColor: '#0366d6',
-    borderColor: '#0366d6',
+    backgroundColor: '#0258b8',
+    transform: [{ scale: 0.98 }],
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+    shadowColor: '#9CA3AF',
+    opacity: 0.7,
   },
   submitButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  submitButtonTextPressed: {
-    color: '#fff',
-  },
-  uploadFileBtn: {
-    backgroundColor: '#0366d6',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignSelf: 'flex-end',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    marginTop: 8,
-    marginBottom: 0,
-  },
-  uploadFileBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-    letterSpacing: 0.2,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   fileModalContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    padding: 24,
-    width: 300,
-    alignItems: 'stretch',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
   },
   fileModalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 18,
-    color: '#222',
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 20,
     textAlign: 'center',
   },
   fileModalOption: {
-    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F3F4F6',
+  },
+  fileModalOptionIcon: {
+    marginRight: 12,
   },
   fileModalOptionText: {
     fontSize: 16,
-    color: '#0366d6',
-    textAlign: 'center',
+    color: '#111827',
   },
 });
 
-export default PatientDetails; 
+export default PatientDetails;
