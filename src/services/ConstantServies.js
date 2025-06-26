@@ -68,3 +68,9 @@ export const processbookingdata = async () => {
   const db_name = await getDbName();
   return `${newEndpoint2}/process_booking_data/${db_name}/`;
 }
+
+export const uploadDocumentURL = async () => {
+  const db_name = await getDbName();
+  return `${newEndpoint2}/process_cust_document_data/${db_name}/`;
+}
+

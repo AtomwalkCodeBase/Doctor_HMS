@@ -1,19 +1,85 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Alert, Modal } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import CustomStatusBar from '../components/StatusBar';
 import VitalCard from '../components/VitalCard';
 import ActionButton from '../components/ActionButton';
 import Header from '../components/Header';
-import { processBookingData } from '../services/productServices';
+import { processBookingData, uploadDocumentData } from '../services/productServices';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import SuccessModal from '../components/SuccessModal';
 
 const PatientDetails = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [isPressed, setIsPressed] = useState(false);
-  const [symptoms, setSymptoms] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [prescriptionName, setPrescriptionName] = useState('');
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+
+  // Permissions for camera
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera permission is required to take a photo.');
+      return false;
+    }
+    return true;
+  };
+
+  // Permissions for media library
+  const requestMediaLibraryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Media library permission is required to select an image.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleTakePhoto = async () => {
+    setShowFileModal(false);
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setSelectedFile({ type: 'image', uri: result.assets[0].uri, name: result.assets[0].fileName || 'photo.jpg' });
+    }
+  };
+
+  const handleChooseImage = async () => {
+    setShowFileModal(false);
+    const hasPermission = await requestMediaLibraryPermission();
+    if (!hasPermission) return;
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setSelectedFile({ type: 'image', uri: result.assets[0].uri, name: result.assets[0].fileName || 'image.jpg' });
+    }
+  };
+
+  const handlePickPDF = async () => {
+    setShowFileModal(false);
+    let result = await DocumentPicker.getDocumentAsync({
+      type: 'application/pdf',
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (result.type === 'success') {
+      setSelectedFile({ type: 'pdf', uri: result.uri, name: result.name });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -82,6 +148,34 @@ const PatientDetails = () => {
           />
         </ScrollView>
 
+        {/* Upload File Button Row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 8, marginRight: 16 }}>
+          {selectedFile && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, maxWidth: 160 }}>
+              {selectedFile.type === 'pdf' && (
+                <MaterialCommunityIcons name="file-pdf-box" size={22} color="#d32f2f" style={{ marginRight: 4 }} />
+              )}
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: selectedFile.type === 'pdf' ? '#d32f2f' : '#222',
+                  maxWidth: 120,
+                }}
+                numberOfLines={1}
+                ellipsizeMode="middle"
+              >
+                {selectedFile.name}
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.uploadFileBtn}
+            onPress={() => setShowFileModal(true)}
+          >
+            <Text style={styles.uploadFileBtnText}>Upload File</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Prescription Name */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Prescription Name</Text>
@@ -94,16 +188,16 @@ const PatientDetails = () => {
           />
         </View>
 
-        {/* Issue/Symptoms */}
+        {/* Remarks */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Issue / Symptoms</Text>
+          <Text style={styles.sectionTitle}>Remarks</Text>
           <TextInput
             style={styles.symptomsInput}
             multiline
-            placeholder="Enter patient symptoms..."
+            placeholder="Enter remarks..."
             placeholderTextColor="#9CA3AF"
-            value={symptoms}
-            onChangeText={setSymptoms}
+            value={remarks}
+            onChangeText={setRemarks}
           />
         </View>
 
@@ -146,12 +240,15 @@ const PatientDetails = () => {
         <TouchableOpacity 
           style={[
             styles.submitButton,
-            isPressed && styles.submitButtonPressed
+            isPressed && styles.submitButtonPressed,
+            (!prescriptionName || !selectedFile) && { opacity: 0.5 }
           ]} 
           onPressIn={() => setIsPressed(true)}
           onPressOut={() => setIsPressed(false)}
           onPress={async () => {
+            if (!prescriptionName || !selectedFile) return;
             try {
+              // 1. Send processBookingData (without remarks)
               const booking_data = {
                 customer_id: params.customer_id,
                 equipment_id: params.equipment_id,
@@ -161,17 +258,37 @@ const PatientDetails = () => {
                 duration: params.duration,
                 call_mode: 'COMPLETE',
                 status: 'COMPLETE',
-                remarks: symptoms,
                 booking_id: params.booking_id,
               };
-              console.log('Booking Data to POST:', booking_data);
-              await processBookingData(booking_data);
-              Alert.alert('Success', 'Booking marked as complete!');
+              // console.log('Sending processBookingData:', booking_data);
+              const bookingRes = await processBookingData(booking_data);
+              // console.log('processBookingData response:', bookingRes);
+
+              // 2. Send uploadDocumentData
+              if (selectedFile && prescriptionName) {
+                const document_data = {
+                  call_mode: 'ADD_DOCUMENT',
+                  document_id: 1,
+                  customer_id: params.customer_id,
+                  doc_file: selectedFile,
+                  document_name: prescriptionName,
+                  remarks: remarks,
+                };
+                // console.log('Sending uploadDocumentData:', document_data);
+                const uploadRes = await uploadDocumentData(document_data);
+                // console.log('uploadDocumentData response:', uploadRes);
+              } else {
+                console.log('Skipping uploadDocumentData: selectedFile or prescriptionName missing');
+              }
+
+              setSuccessModalVisible(true);
             } catch (err) {
-              Alert.alert('Error', 'Failed to complete booking.');
+              console.log('Error in Submit handler:', err);
+              Alert.alert('Error', 'Failed to complete booking or upload document.');
             }
           }}
           activeOpacity={1}
+          disabled={!prescriptionName || !selectedFile}
         >
           <Text style={[
             styles.submitButtonText,
@@ -181,6 +298,38 @@ const PatientDetails = () => {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* File Upload Action Sheet/Modal */}
+      <Modal
+        visible={showFileModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFileModal(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowFileModal(false)}>
+          <View style={styles.fileModalContainer}>
+            <Text style={styles.fileModalTitle}>Select File Type</Text>
+            <TouchableOpacity style={styles.fileModalOption} onPress={handleTakePhoto}>
+              <Text style={styles.fileModalOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.fileModalOption} onPress={handleChooseImage}>
+              <Text style={styles.fileModalOptionText}>Choose Image from Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.fileModalOption} onPress={handlePickPDF}>
+              <Text style={styles.fileModalOptionText}>Select PDF Document</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <SuccessModal
+        visible={successModalVisible}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          router.push('/home');
+        }}
+        message="Booking and document uploaded!"
+      />
     </View>
   );
 };
@@ -244,7 +393,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderRadius: 12,
     padding: 12,
-    height: 40,
+    height: 60,
     fontSize: 16,
   },
   symptomsInput: {
@@ -287,6 +436,60 @@ const styles = StyleSheet.create({
   },
   submitButtonTextPressed: {
     color: '#fff',
+  },
+  uploadFileBtn: {
+    backgroundColor: '#0366d6',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignSelf: 'flex-end',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    marginTop: 8,
+    marginBottom: 0,
+  },
+  uploadFileBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+    letterSpacing: 0.2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 24,
+    width: 300,
+    alignItems: 'stretch',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fileModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 18,
+    color: '#222',
+    textAlign: 'center',
+  },
+  fileModalOption: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  fileModalOptionText: {
+    fontSize: 16,
+    color: '#0366d6',
+    textAlign: 'center',
   },
 });
 

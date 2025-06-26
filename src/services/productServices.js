@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getActivities, userTaskListURL, empLoginURL, updateTaskURL, setUserPinURL, forgetEmpPinURL, getbookedList, processbookingdata } from "../services/ConstantServies";
-import { authAxios, authAxiosPost, publicAxiosRequest } from "./HttpMethod";
+import { getActivities, userTaskListURL, empLoginURL, updateTaskURL, setUserPinURL, forgetEmpPinURL, getbookedList, processbookingdata, uploadDocumentURL } from "../services/ConstantServies";
+import { authAxios, authAxiosPost, publicAxiosRequest, authAxiosFilePost } from "./HttpMethod";
 
 export async function getUserTasks(task_type, customer_id, lead_id) {
   const url = await userTaskListURL();
@@ -90,4 +90,25 @@ export async function getbookedlistview() {
 export async function processBookingData(booking_data) {
   const url = await processbookingdata();
   return authAxiosPost(url, { booking_data });
+}
+
+export async function uploadDocumentData(document_data) {
+  const url = await uploadDocumentURL();
+  const formData = new FormData();
+
+  formData.append('call_mode', document_data.call_mode);
+  formData.append('document_id', document_data.document_id);
+  formData.append('customer_id', document_data.customer_id);
+  formData.append('document_name', document_data.document_name);
+  formData.append('remarks', document_data.remarks);
+
+  if (document_data.doc_file) {
+    formData.append('doc_file', {
+      uri: document_data.doc_file.uri,
+      type: document_data.doc_file.type === 'pdf' ? 'application/pdf' : 'image/jpeg',
+      name: document_data.doc_file.name || 'file',
+    });
+  }
+
+  return authAxiosFilePost(url, formData);
 }
