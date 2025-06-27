@@ -2,11 +2,24 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const ActionButton = ({ icon, label, onPress, style }) => {
+const ActionButton = ({ icon, label, onPress, style, disabled = false }) => {
   return (
-    <TouchableOpacity style={[styles.container, style]} onPress={onPress}>
-      <Ionicons name={icon} size={24} color="#0366d6" style={styles.icon} />
-      <Text style={styles.label}>{label}</Text>
+    <TouchableOpacity 
+      style={[
+        styles.container, 
+        style, 
+        disabled && styles.disabledContainer
+      ]} 
+      onPress={disabled ? null : onPress}
+      disabled={disabled}
+    >
+      <Ionicons 
+        name={icon} 
+        size={24} 
+        color={disabled ? "#9CA3AF" : "#0366d6"} 
+        style={styles.icon} 
+      />
+      <Text style={[styles.label, disabled && styles.disabledLabel]}>{label}</Text>
     </TouchableOpacity>
   );
 };
@@ -28,6 +41,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  disabledContainer: {
+    borderColor: '#D1D5DB',
+    backgroundColor: '#F9FAFB',
+    shadowOpacity: 0.02,
+    elevation: 1,
+  },
   icon: {
     marginRight: 12,
   },
@@ -35,6 +54,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0366d6',
+  },
+  disabledLabel: {
+    color: '#9CA3AF',
   },
 });
 

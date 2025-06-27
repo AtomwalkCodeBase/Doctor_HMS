@@ -43,16 +43,10 @@ const AppointmentCard = ({ id, name, date, time, avatar, completed, onPress, sta
       )}
       <Text style={styles.date}>{date}</Text>
       <Text style={styles.time}>{time}</Text>
-      {completed ? (
-        <TouchableOpacity style={styles.completedButton} onPress={onPress}>
-          <Text style={styles.completedText}>Completed</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={styles.detailsButton} onPress={onPress}>
-          <Text style={styles.detailsText}>See Details</Text>
-          <Ionicons name="chevron-forward" size={16} color="#111" style={{ marginLeft: 6 }} />
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity style={styles.detailsButton} onPress={onPress}>
+        <Text style={styles.detailsText}>See Details</Text>
+        <Ionicons name="chevron-forward" size={16} color="#111" style={{ marginLeft: 6 }} />
+      </TouchableOpacity>
     </View>
     {/* Avatar and Status Badge Column */}
     <View style={styles.avatarColumn}>
@@ -112,21 +106,6 @@ const styles = StyleSheet.create({
   },
   detailsText: {
     color: '#111',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  completedButton: {
-    backgroundColor: '#D1FADF',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignSelf: 'flex-start',
-    marginTop: 16,
-  },
-  completedText: {
-    color: '#217A39',
     fontWeight: '600',
     fontSize: 15,
   },

@@ -187,6 +187,7 @@ const HomeScreen = () => {
         booking_id: appointment.booking_id,
         remarks: appointment.remarks,
         avatarUrl: appointment.avatar && appointment.avatar.uri ? appointment.avatar.uri : null,
+        isCompleted: appointment.completed,
       }
     });
   };
