@@ -9,7 +9,7 @@ function formatDateDMY(date) {
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
 
-const DatePickerField = ({ label, value, onChange, placeholder = 'Select date', onPress }) => {
+const DatePickerField = ({ label, value, onChange, placeholder = 'Select date', onPress, style, textColor }) => {
   const [show, setShow] = useState(false);
 
   const handleChange = (event, selectedDate) => {
@@ -21,9 +21,9 @@ const DatePickerField = ({ label, value, onChange, placeholder = 'Select date', 
     <View style={{ flex: 1 }}>
       {label && <Text style={styles.label}>{label}</Text>}
       <TouchableOpacity onPress={onPress ? onPress : () => setShow(true)}>
-        <View style={styles.dateInputRow}>
-          <Ionicons name="calendar-outline" size={18} color="#0366d6" />
-          <Text style={[styles.dateInput, { color: value ? '#222' : '#888' }]}> 
+        <View style={[styles.dateInputRow, style]}>
+          <Ionicons name="calendar-outline" size={18} color={textColor || "#0366d6"} />
+          <Text style={[styles.dateInput, { color: textColor || (value ? '#222' : '#888') }]}> 
             {value ? formatDateDMY(value) : placeholder}
           </Text>
         </View>

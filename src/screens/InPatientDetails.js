@@ -17,7 +17,7 @@ import OutlinedButton from '../components/OutlinedButton';
 import NoteInput from '../components/NoteInput';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePickerField from '../components/DatePickerField';
 
 const vitalsData = [
   {
@@ -55,8 +55,7 @@ const overviewData = {
   chiefComplaint: 'Shortness of breath, cough',
   admissionDate: '2024-07-26',
   physician: 'Dr. Roshit Singh',
-  notes:
-    'Patient showing improvement in breathing. Continue current treatment plan.',
+  notes: 'Patient showing improvement in breathing. Continue current treatment plan.',
 };
 
 const TABS = ['Overview', 'Vitals', 'Medications'];
@@ -68,7 +67,6 @@ const InPatientDetails = () => {
   const [addNoteModalVisible, setAddNoteModalVisible] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [notes, setNotes] = useState(overviewData.notes);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
   const handleAddNote = () => {
@@ -95,220 +93,272 @@ const InPatientDetails = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header title="In Patient Details" onBack={() => router.back()} />
-      <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
-        {/* Patient Info Section */}
-        <View style={styles.patientInfoSection}>
-          <Image source={require('../../assets/images/UserIcon.png')} style={styles.avatar} />
-          <View style={styles.patientInfoTextCol}>
+      
+      <ScrollView 
+        style={styles.scroll} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Patient Profile Section */}
+        <View style={styles.profileContainer}>
+          <Image 
+            source={require('../../assets/images/UserIcon.png')} 
+            style={styles.avatar} 
+          />
+          <View style={styles.profileInfo}>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>Critical</Text>
+            </View>
             <Text style={styles.patientName}>Yuvraj Singh</Text>
-            <Text style={styles.patientSubtext}>Critical Condition{"\n"}Room 302, Ward B</Text>
+            <Text style={styles.patientDetails}>35, Male • Bed 302, Ward B</Text>
           </View>
         </View>
-        {/* Toggle Section */}
-        <View style={styles.toggleSection}>
+
+        {/* Rounds Toggle */}
+        <View style={styles.roundsContainer}>
           <View>
-            <Text style={styles.toggleLabel}>Mark Rounds as Done</Text>
-            <Text style={styles.toggleSubtext}>Last Updated: 11:45 AM</Text>
+            <Text style={styles.roundsLabel}>Mark Rounds as Done</Text>
+            <Text style={styles.roundsSubtext}>Last updated: Today, 11:45 AM</Text>
           </View>
           <Switch
             value={roundsDone}
             onValueChange={setRoundsDone}
             trackColor={{ false: '#E5E7EB', true: '#0366d6' }}
             thumbColor={roundsDone ? '#fff' : '#fff'}
-            style={styles.toggleSwitch}
           />
         </View>
-        {/* Vitals Scroll Cards */}
+
+        {/* Vitals Cards */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.vitalsScroll}
-          contentContainerStyle={{ paddingHorizontal: 20 }}
+          contentContainerStyle={styles.vitalsScroll}
         >
-          {vitalsData.map((v, idx) => (
-            <VitalCard key={v.label} {...v} />
+          {vitalsData.map((vital, index) => (
+            <VitalCard 
+              key={`vital-${index}`} 
+              {...vital} 
+              style={styles.vitalCard}
+            />
           ))}
         </ScrollView>
-        {/* Tabs Section */}
-        <View style={styles.tabsSection}>
-          {TABS.map((tab, idx) => (
+
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          {TABS.map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={styles.tabBtn}
+              style={[
+                styles.tabButton,
+                selectedTab === tab && styles.activeTabButton
+              ]}
               onPress={() => setSelectedTab(tab)}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.tabText, selectedTab === tab && styles.tabTextActive]}>{tab}</Text>
-              {selectedTab === tab && <View style={styles.tabUnderline} />}
+              <Text style={[
+                styles.tabText,
+                selectedTab === tab && styles.activeTabText
+              ]}>
+                {tab}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {/* Overview Section */}
-        {selectedTab === 'Overview' && (
-          <View style={styles.overviewSection}>
-            <View style={styles.sectionField}>
-              <Text style={styles.fieldLabel}>Diagnosis</Text>
-              <Text style={styles.fieldValue}>{overviewData.diagnosis}</Text>
-            </View>
-            <View style={styles.sectionField}>
-              <Text style={styles.fieldLabel}>Chief Complaint</Text>
-              <Text style={styles.fieldValue}>{overviewData.chiefComplaint}</Text>
-            </View>
-            <View style={styles.sectionField}>
-              <Text style={styles.fieldLabel}>Admission Date</Text>
-              <Text style={styles.fieldValue}>{overviewData.admissionDate}</Text>
-            </View>
-            <View style={styles.sectionField}>
-              <Text style={styles.fieldLabel}>Attending Physician</Text>
-              <Text style={styles.fieldValue}>{overviewData.physician}</Text>
-            </View>
-            <View style={[styles.sectionField, styles.lastSectionField]}>
-              <Text style={styles.fieldLabel}>Notes</Text>
-              <Text style={styles.fieldValue}>{notes}</Text>
-            </View>
-            {/* Action Buttons */}
-            <View style={styles.actionRow}>
-              <PrimaryButton
-                style={styles.addNoteBtn}
-                textStyle={styles.addNoteBtnText}
-                onPress={handleAddNote}
-              >
-                Add Note
-              </PrimaryButton>
-              <OutlinedButton
-                style={styles.manageMedBtn}
-                textStyle={styles.manageMedBtnText}
-                onPress={() => setSelectedTab('Medications')}
-              >
-                Manage Medications
-              </OutlinedButton>
-            </View>
-            <PrimaryButton
-              style={styles.orderTestsBtn}
-              textStyle={styles.orderTestsBtnText}
-              onPress={() => {}}
-            >
-              Order Tests
-            </PrimaryButton>
-            {/* Add Note Modal */}
-            <Modal
-              visible={addNoteModalVisible}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setAddNoteModalVisible(false)}
-            >
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                <View style={{ width: '88%', maxWidth: 360, backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#222', fontFamily: 'Inter' }}>Add Note</Text>
-                  <NoteInput
-                    style={{ width: '100%', minHeight: 100, marginBottom: 18, fontFamily: 'Inter' }}
-                    placeholder="Write your note here..."
-                    value={noteText}
-                    onChangeText={setNoteText}
-                  />
-                  <PrimaryButton
-                    style={{ width: '100%', height: 48, borderRadius: 12, backgroundColor: '#0366D6', justifyContent: 'center', alignItems: 'center' }}
-                    textStyle={{ color: '#fff', fontSize: 16, fontWeight: 'bold', fontFamily: 'Inter' }}
-                    onPress={handleSubmitNote}
-                  >
-                    Submit
-                  </PrimaryButton>
-                  <OutlinedButton
-                    style={{ width: '100%', height: 44, borderRadius: 12, marginTop: 10, backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center' }}
-                    textStyle={{ color: '#222', fontSize: 16, fontWeight: 'bold', fontFamily: 'Inter' }}
-                    onPress={() => setAddNoteModalVisible(false)}
-                  >
-                    Cancel
-                  </OutlinedButton>
+
+        {/* Tab Content */}
+        <View style={styles.tabContent}>
+          {/* Overview Tab */}
+          {selectedTab === 'Overview' && (
+            <>
+              <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                  <Ionicons name="medical" size={18} color="#0366d6" />
+                  <Text style={styles.infoLabel}>Diagnosis</Text>
+                  <Text style={styles.infoValue}>{overviewData.diagnosis}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Ionicons name="warning" size={18} color="#0366d6" />
+                  <Text style={styles.infoLabel}>Chief Complaint</Text>
+                  <Text style={styles.infoValue}>{overviewData.chiefComplaint}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Ionicons name="calendar" size={18} color="#0366d6" />
+                  <Text style={styles.infoLabel}>Admission Date</Text>
+                  <Text style={styles.infoValue}>{overviewData.admissionDate}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <Ionicons name="person" size={18} color="#0366d6" />
+                  <Text style={styles.infoLabel}>Attending Physician</Text>
+                  <Text style={styles.infoValue}>{overviewData.physician}</Text>
                 </View>
               </View>
-            </Modal>
-          </View>
-        )}
-        {/* Vitals Tab Content */}
-        {selectedTab === 'Vitals' && (
-          <View style={styles.overviewSection}>
-            {/* Section Header */}
-            <Text style={styles.fieldLabel}>Historical Vitals</Text>
-            {/* Select Date Button */}
-            <TouchableOpacity
-              style={styles.selectDateBtn}
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="calendar-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.selectDateBtnText} numberOfLines={1}>
-                {selectedDate ? formatDateDMY(selectedDate) : 'Select Date'}
-              </Text>
-            </TouchableOpacity>
-            {/* Date Picker Modal */}
-            {showDatePicker && (
-              <Modal
-                transparent
-                animationType="fade"
-                visible={showDatePicker}
-                onRequestClose={() => setShowDatePicker(false)}
+
+              <View style={styles.notesCard}>
+                <View style={styles.notesHeader}>
+                  <Ionicons name="document-text" size={20} color="#0366d6" />
+                  <Text style={styles.notesTitle}>Clinical Notes</Text>
+                </View>
+                <Text style={styles.notesText}>{notes}</Text>
+              </View>
+
+              <View style={styles.buttonRow}>
+                <OutlinedButton 
+                  style={styles.medsButton}
+                  onPress={() => setSelectedTab('Medications')}
+                  icon="medkit-outline"
+                >
+                  Manage Medications
+                </OutlinedButton>
+                <PrimaryButton 
+                  style={styles.noteButton}
+                  onPress={handleAddNote}
+                  icon="create-outline"
+                >
+                  Add Note
+                </PrimaryButton>
+              </View>
+
+              <PrimaryButton 
+                style={styles.testsButton}
+                onPress={() => {}}
+                icon="flask-outline"
               >
-                <View style={styles.datePickerModalBg}>
-                  <View style={styles.datePickerModalContent}>
-                    <DateTimePicker
-                      value={selectedDate || new Date()}
-                      mode="date"
-                      display="default"
-                      onChange={(event, date) => {
-                        if (date) setSelectedDate(date);
-                        setShowDatePicker(false);
-                      }}
-                    />
+                Order Tests
+              </PrimaryButton>
+            </>
+          )}
+
+          {/* Vitals Tab */}
+          {selectedTab === 'Vitals' && (
+            <>
+              <View style={styles.dateSelector}>
+                <View style={{ width: 140 }}>
+                  <DatePickerField
+                    value={selectedDate}
+                    onChange={setSelectedDate}
+                    placeholder="Select Date"
+                    style={{ marginTop: 0, marginBottom: 0, height: 48, backgroundColor: '#0366d6' }}
+                    textColor="#fff"
+                  />
+                </View>
+              </View>
+              <View style={styles.vitalsHistoryCard}>
+                <View style={styles.vitalHistoryRow}>
+                  <View style={styles.vitalHistoryItem}>
+                    <View style={styles.vitalHistoryIcon}>
+                      <Ionicons name="calendar" size={16} color="#0366d6" />
+                    </View>
+                    <Text style={styles.vitalHistoryLabel}>Date</Text>
+                    <Text style={styles.vitalHistoryValue}>07/20/2024</Text>
+                  </View>
+                  <View style={styles.vitalHistoryItem}>
+                    <View style={styles.vitalHistoryIcon}>
+                      <Ionicons name="speedometer" size={16} color="#0366d6" />
+                    </View>
+                    <Text style={styles.vitalHistoryLabel}>Respiratory Rate</Text>
+                    <Text style={styles.vitalHistoryValue}>16 breaths/min</Text>
                   </View>
                 </View>
-              </Modal>
-            )}
-            {/* Historical Vitals Card */}
-            <View style={styles.historicalVitalsCard}>
-              {/* Row 1 */}
-              <View style={styles.vitalsRow}>
-                <View style={styles.vitalColLeft}>
-                  <Text style={styles.vitalLabel}>Date</Text>
-                  <Text style={styles.vitalValue}>07/20/2024</Text>
+
+                <View style={styles.divider} />
+
+                <View style={styles.vitalHistoryRow}>
+                  <View style={styles.vitalHistoryItem}>
+                    <View style={styles.vitalHistoryIcon}>
+                      <Ionicons name="heart" size={16} color="#0366d6" />
+                    </View>
+                    <Text style={styles.vitalHistoryLabel}>Heart Rate</Text>
+                    <Text style={styles.vitalHistoryValue}>72 bpm</Text>
+                  </View>
+                  <View style={styles.vitalHistoryItem}>
+                    <View style={styles.vitalHistoryIcon}>
+                      <Ionicons name="water" size={16} color="#0366d6" />
+                    </View>
+                    <Text style={styles.vitalHistoryLabel}>Blood Pressure</Text>
+                    <Text style={styles.vitalHistoryValue}>120/80 mmHg</Text>
+                  </View>
                 </View>
-                <View style={styles.vitalColRight}>
-                  <Text style={styles.vitalLabel}>Respiratory Rate</Text>
-                  <Text style={styles.vitalValue}>16 breaths/min</Text>
+
+                <View style={styles.divider} />
+
+                <View style={styles.vitalHistoryRow}>
+                  <View style={styles.vitalHistoryItem}>
+                    <View style={styles.vitalHistoryIcon}>
+                      <Ionicons name="thermometer" size={16} color="#0366d6" />
+                    </View>
+                    <Text style={styles.vitalHistoryLabel}>Temperature</Text>
+                    <Text style={styles.vitalHistoryValue}>98.6 °F</Text>
+                  </View>
+                  <View style={styles.vitalHistoryItem}>
+                    <View style={styles.vitalHistoryIcon}>
+                      <Ionicons name="pulse" size={16} color="#0366d6" />
+                    </View>
+                    <Text style={styles.vitalHistoryLabel}>SpO2</Text>
+                    <Text style={styles.vitalHistoryValue}>98 %</Text>
+                  </View>
                 </View>
               </View>
-              {/* Row 2 */}
-              <View style={styles.vitalsRow}>
-                <View style={styles.vitalColLeft}>
-                  <Text style={styles.vitalLabel}>Heart Rate</Text>
-                  <Text style={styles.vitalValue}>72 bpm</Text>
-                </View>
-                <View style={styles.vitalColRight}>
-                  <Text style={styles.vitalLabel}>Blood Pressure</Text>
-                  <Text style={styles.vitalValue}>120/80 mmHg</Text>
-                </View>
-              </View>
-              {/* Row 3 */}
-              <View style={styles.vitalsRowLast}>
-                <View style={styles.vitalColLeft}>
-                  <Text style={styles.vitalLabel}>Temperature</Text>
-                  <Text style={styles.vitalValue}>98.6 °F</Text>
-                </View>
-                <View style={styles.vitalColRight}>
-                  <Text style={styles.vitalLabel}>SpO2</Text>
-                  <Text style={styles.vitalValue}>98 %</Text>
-                </View>
-              </View>
+            </>
+          )}
+
+          {/* Medications Tab */}
+          {selectedTab === 'Medications' && (
+            <View style={styles.medsPlaceholder}>
+              <Ionicons name="medkit" size={48} color="#0366d6" />
+              <Text style={styles.medsPlaceholderText}>Medications details will appear here</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Add Note Modal */}
+      <Modal
+        visible={addNoteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddNoteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Clinical Note</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setAddNoteModalVisible(false)}
+              >
+                <Ionicons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            
+            <NoteInput
+              style={styles.noteInput}
+              placeholder="Enter your clinical notes here..."
+              value={noteText}
+              onChangeText={setNoteText}
+              multiline
+              numberOfLines={5}
+            />
+
+            <View style={styles.modalButtons}>
+              <OutlinedButton
+                style={styles.cancelButton}
+                onPress={() => setAddNoteModalVisible(false)}
+              >
+                Cancel
+              </OutlinedButton>
+              <PrimaryButton
+                style={styles.submitButton}
+                onPress={handleSubmitNote}
+              >
+                Save Note
+              </PrimaryButton>
             </View>
           </View>
-        )}
-        {/* Medications Tab Content */}
-        {selectedTab === 'Medications' && (
-          <View style={styles.overviewSection}>
-            <Text style={styles.fieldLabel}>Medications Details Here</Text>
-          </View>
-        )}
-      </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -316,275 +366,328 @@ const InPatientDetails = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F9FAFB',
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#fff',
   },
-  patientInfoSection: {
+  scrollContent: {
+    paddingBottom: 32,
+  },
+  profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 24,
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    padding: 24,
+    paddingBottom: 16,
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#eee',
-    marginRight: 20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 16,
+    backgroundColor: '#E5E7EB',
   },
-  patientInfoTextCol: {
+  profileInfo: {
     flex: 1,
+  },
+  statusBadge: {
+    backgroundColor: '#FEE2E2',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  statusText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: '600',
   },
   patientName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#111827',
-    fontFamily: 'Inter',
+    marginBottom: 4,
   },
-  patientSubtext: {
+  patientDetails: {
     fontSize: 16,
     color: '#6B7280',
-    fontFamily: 'Inter',
-    marginTop: 4,
-    lineHeight: 22,
   },
-  toggleSection: {
+  roundsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginVertical: 20,
-    marginTop: 0,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  toggleLabel: {
+  roundsLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
-    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#111827',
   },
-  toggleSubtext: {
+  roundsSubtext: {
     fontSize: 14,
-    color: '#888',
-    fontFamily: 'Inter',
-    marginTop: 2,
-  },
-  toggleSwitch: {
-    width: 48,
-    height: 28,
+    color: '#9CA3AF',
+    marginTop: 4,
   },
   vitalsScroll: {
-    marginVertical: 10,
-    marginBottom: 0,
-    marginTop: 0,
+    paddingLeft: 16,
+    paddingVertical: 8,
   },
-  tabsSection: {
+  vitalCard: {
+    marginRight: 12,
+  },
+  tabsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    paddingHorizontal: 20,
-    marginBottom: 0,
-    justifyContent: 'space-between',
-    marginTop: 5,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 6,
+    marginVertical: 16,
+    marginHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  tabBtn: {
+  tabButton: {
     flex: 1,
-    height: 48,
-    justifyContent: 'center',
+    paddingVertical: 10,
     alignItems: 'center',
+    position: 'relative',
+  },
+  activeTabButton: {
+    backgroundColor: '#e6f0fa',
+    borderRadius: 8,
   },
   tabText: {
-    fontSize: 16,
-    color: '#888',
-    fontWeight: '500',
-    fontFamily: 'Inter',
-  },
-  tabTextActive: {
-    color: '#111',
-    fontWeight: 'bold',
-  },
-  tabUnderline: {
-    marginTop: 3,
-    height: 3,
-    backgroundColor: '#111',
-    borderRadius: 2,
-    width: '100%',
-  },
-  overviewSection: {
-    marginTop: 8,
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 0,
-    marginBottom: 8,
-    paddingHorizontal: 20,
-  },
-  sectionField: {
-    marginBottom: 18,
-  },
-  lastSectionField: {
-    marginBottom: 8,
-  },
-  fieldLabel: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#111',
-    marginBottom: 4,
-    fontFamily: 'Inter',
-  },
-  fieldValue: {
-    fontSize: 16,
-    color: '#222',
-    fontFamily: 'Inter',
-    marginBottom: 0,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginTop: 0,
-    marginBottom: 0,
-    gap: 16,
-  },
-  addNoteBtn: {
-    width: 120,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#0366D6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-  },
-  addNoteBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Inter',
-  },
-  manageMedBtn: {
-    width: 180,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F2F2F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 'auto',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-  },
-  manageMedBtnText: {
-    color: '#222',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Inter',
-  },
-  orderTestsBtn: {
-    marginTop: 24,
-    marginBottom: -10,
-    borderRadius: 14,
-    width: 370,
-    height: 54,
-    backgroundColor: '#0366D6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-  },
-  orderTestsBtnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    fontFamily: 'Inter',
-  },
-  vitalsSectionHeader: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111',
-    marginTop: 16,
-    marginBottom: 0,
-    paddingHorizontal: 16,
-  },
-  selectDateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 40,
-    minWidth: 130,
-    maxWidth: 220,
-    backgroundColor: '#0366d6',
-    borderRadius: 12,
-    marginTop: 12,
-    marginBottom: 0,
-    marginLeft: 0,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-start',
-  },
-  selectDateBtnText: {
-    color: '#fff',
     fontSize: 15,
-    fontWeight: 'bold',
-    fontFamily: 'Inter',
-    flexShrink: 1,
+    fontWeight: '500',
+    color: '#64748B',
   },
-  datePickerModalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  activeTabText: {
+    color: '#0366d6',
+    fontWeight: '600',
   },
-  datePickerModalContent: {
-    backgroundColor: '#fff',
+  tabContent: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  infoCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: 15,
+    color: '#64748B',
+    fontWeight: '500',
+    marginLeft: 12,
+    width: 140,
+  },
+  infoValue: {
+    fontSize: 15,
+    color: '#1E293B',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  },
+  notesCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  notesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  notesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginLeft: 8,
+  },
+  notesText: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 22,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -12,
+    marginBottom: 8,
+    gap: 12,
+  },
+  medsButton: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#0366d6',
+    borderWidth: 1,
+    paddingVertical: 16,
+  },
+  noteButton: {
+    flex: 1,
+    paddingVertical: 16,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  historicalVitalsCard: {
-    backgroundColor: '#fff',
+  testsButton: {
     width: '100%',
-    marginTop: 24,
+    paddingVertical: 16,
+    marginTop: 10,
+    marginBottom: -35,
+  },
+  dateSelector: {
+    marginBottom: 16,
+  },
+  vitalsHistoryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  vitalHistoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  vitalHistoryItem: {
+    flex: 1,
+    paddingHorizontal: 8,
+  },
+  vitalHistoryIcon: {
+    backgroundColor: '#F1F5FF',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  vitalHistoryLabel: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  vitalHistoryValue: {
+    fontSize: 16,
+    color: '#1E293B',
+    fontWeight: '600',
+  },
+  medsPlaceholder: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  medsPlaceholderText: {
+    fontSize: 16,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  noteInput: {
+    minHeight: 150,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
     padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 0,
-    paddingHorizontal: 0,
-  },
-  vitalsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  vitalsRowLast: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 0,
-  },
-  vitalCol: {
-    flex: 1,
-    marginRight: 16,
-  },
-  vitalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111',
-    fontFamily: 'Inter',
-    marginBottom: 2,
-  },
-  vitalValue: {
+    marginBottom: 24,
+    textAlignVertical: 'top',
     fontSize: 15,
-    color: '#222',
-    fontFamily: 'Inter',
-    fontWeight: '400',
+    color: '#1E293B',
+    backgroundColor: '#F8FAFC',
   },
-  vitalColLeft: {
-    flex: 1,
-    marginRight: 32,
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
   },
-  vitalColRight: {
-    flex: 1,
-    marginLeft: 32,
+  cancelButton: {
+    width: 120,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+  },
+  submitButton: {
+    width: 120,
   },
 });
 
-export default InPatientDetails; 
+export default InPatientDetails;
