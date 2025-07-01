@@ -54,7 +54,8 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     borderRadius: 10,
     padding: 10,
-    marginTop: 4,
+    marginTop: 0,
+    height: 48,
     backgroundColor: '#fff',
   },
   dateInput: {
