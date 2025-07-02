@@ -73,4 +73,12 @@ export const uploadDocumentURL = async () => {
   const db_name = await getDbName();
   return `${newEndpoint2}/process_cust_document_data/${db_name}/`;
 }
+export const getProductCategoryListURL = async () => {
+  const db_name = await getDbName();
+  return `${newEndpoint2}/product_category_list/${db_name}/`;
+}
+export const getVariationNameListURL = async () => {
+  const db_name = await getDbName();
+  return `${newEndpoint2}/variation_name_list/${db_name}/`;
+}
 

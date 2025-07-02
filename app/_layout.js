@@ -20,6 +20,7 @@ export default function RootLayout() {
       <Stack.Screen name="AddTask/exercise" options={{headerShown:false}}/>
       <Stack.Screen name="InPatientDetails/index" options={{headerShown:false}}/>
       <Stack.Screen name="SurgeryDetails/index" options={{headerShown:false}}/>
+      <Stack.Screen name="OrderTest/index" options={{headerShown:false}}/>
       
 
     </Stack>
