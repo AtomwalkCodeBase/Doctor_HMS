@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import SuccessModal from '../components/SuccessModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppContext } from '../../context/AppContext';
 
 const PatientDetails = () => {
   const router = useRouter();
@@ -23,6 +24,7 @@ const PatientDetails = () => {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { customerId } = React.useContext(AppContext);
 
   // Generate a unique key for storing this booking's data
   const getBookingStorageKey = () => {
@@ -359,10 +361,13 @@ const PatientDetails = () => {
                       end_time: params.end_time,
                       duration: params.duration,
                       call_mode: 'COMPLETE',
-                      status: 'COMPLETE',
+                      status: 'COMPLETED',
                       booking_id: params.booking_id,
+                      remarks: remarks,
                     };
+                    // console.log('Submitting booking_data:', booking_data);
                     const bookingRes = await processBookingData(booking_data);
+                    // console.log('processBookingData response:', bookingRes);
                     if (selectedFile && prescriptionName) {
                       const document_data = {
                         call_mode: 'ADD_DOCUMENT',
@@ -374,7 +379,6 @@ const PatientDetails = () => {
                       };
                       const uploadRes = await uploadDocumentData(document_data);
                     }
-                    
                     // Store the submitted data locally
                     await storeBookingData({
                       prescriptionName,
@@ -382,7 +386,6 @@ const PatientDetails = () => {
                       selectedFile,
                       submittedAt: new Date().toISOString()
                     });
-                    
                     setSuccessModalVisible(true);
                   } catch (err) {
                     Alert.alert('Error', 'Failed to complete booking or upload document.');

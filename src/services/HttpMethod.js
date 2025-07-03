@@ -17,12 +17,13 @@ export const authAxios = async (url, data) => {
 
 export const authAxiosPost = async (url, data) => {
   let token = await AsyncStorage.getItem('userToken');
-  // console.log('authaxios', token, url)
+  const headers = {
+    Authorization: `Token ${token}`
+  };
+  // console.log('authAxiosPost', { url, data, token, headers });
   return axios.create({
       baseURL: newEndpoint,
-      headers: {
-          Authorization: `Token ${token}`
-      }
+      headers
   }).post(url, data)
 };
 

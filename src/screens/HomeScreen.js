@@ -57,7 +57,7 @@ const HomeScreen = () => {
         bookings = response;
       }
 
-      // console.log('Fetched bookings:', bookings);
+      // console.log('Raw bookings:', bookings);
 
       // Get today's date in DD-MM-YYYY format
       const today = new Date();
@@ -71,10 +71,11 @@ const HomeScreen = () => {
         if (!item.equipment_data || !item.customer_data || !item.booking_date) {
           return false;
         }
-
         // Check if equipment name matches employee name and booking date matches today
         return item.equipment_data.name === employeeName && item.booking_date === todayString;
       });
+
+      // console.log('Filtered bookings:', filtered.map(b => ({ booking_id: b.booking_id, status_display: b.status_display, customer_id: b.customer_data?.id })));
 
       const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
@@ -104,7 +105,7 @@ const HomeScreen = () => {
         status: [getDisplayStatus(item.status_display)],
       }));
 
-      // console.log('Mapped appointments:', mapped);
+      // console.log('Mapped appointments:', mapped.map(a => ({ booking_id: a.booking_id, status: a.status, completed: a.completed })));
 
       // Convert 24-hour format to 12-hour format
       const convertTo12Hour = (time24) => {
@@ -154,6 +155,8 @@ const HomeScreen = () => {
         endTime: convertTo12Hour(appt.endTime),
         date: formatDate(appt.date)
       }));
+
+      // console.log('Final formattedAppointments:', formattedAppointments.map(a => ({ booking_id: a.booking_id, status: a.status, completed: a.completed })));
 
       setAppointments(formattedAppointments);
       // Calculate completed and total appointments for progress bar
