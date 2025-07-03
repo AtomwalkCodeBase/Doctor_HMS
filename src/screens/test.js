@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { 
   View, 
   Text, 
@@ -15,7 +15,10 @@ import RoundedTextInput from '../components/RoundedTextInput';
 import PrimaryButton from '../components/PrimaryButton';
 import { Ionicons } from '@expo/vector-icons';
 import DatePickerField from '../components/DatePickerField';
-import { getProductCategoryList, getVariationNameList } from '../services/productServices';
+import { getProductCategoryList, getVariationNameList, updateProduct } from '../services/productServices';
+import { AppContext } from '../../context/AppContext';
+import SuccessModal from '../components/SuccessModal';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +41,9 @@ const TestPicker = ({ navigation }) => {
   const [variationTests, setVariationTests] = useState([]);
   const [loadingVariations, setLoadingVariations] = useState(true);
   const [variationError, setVariationError] = useState(null);
+  const { customerId } = useContext(AppContext);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -94,18 +100,87 @@ const TestPicker = ({ navigation }) => {
   }, [selectedVariation, variations]);
 
   const toggleTest = (id) => {
-    setSelectedTests(prev => 
-      prev.includes(id) 
-        ? prev.filter(testId => testId !== id) 
-        : [...prev, id]
-    );
+    setSelectedTests(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(testId => testId !== id);
+      } else if (prev.length < 3) {
+        return [...prev, id];
+      } else {
+        return prev; // Do not allow more than 3
+      }
+    });
+  };
+
+  // Helper to format date as DD-MM-YYYY
+  const formatDate = (dateObj) => {
+    const d = new Date(dateObj);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  // Find selected category id
+  const getSelectedCategoryId = () => {
+    const cat = categories.find(c => c.name === selectedCategory);
+    return cat ? cat.id : null;
+  };
+
+  // Order Tests handler
+  const handleOrderTests = async () => {
+    if (!customerId) {
+      alert('Customer ID not found.');
+      return;
+    }
+    if (!selectedVariation) {
+      alert('Please select a variation.');
+      return;
+    }
+    if (!getSelectedCategoryId()) {
+      alert('Please select a category.');
+      return;
+    }
+    if (selectedTests.length === 0) {
+      alert('Please select at least one test.');
+      return;
+    }
+    // Prepare up to 3 variation values
+    const values = [...selectedTests];
+    while (values.length < 3) values.push('');
+    const payload = {
+      call_mode: 'C',
+      category_id: getSelectedCategoryId(),
+      customer_id: customerId,
+      due_date: formatDate(date),
+      id: '',
+      lead_id: '',
+      product_info: notes,
+      task_id: '',
+      variation_name_id: selectedVariation,
+      variation_name_1_id: selectedVariation,
+      variation_name_2_id: selectedVariation,
+      variation_value: values[0],
+      variation_value_1: values[1],
+      variation_value_2: values[2],
+    };
+    try {
+      // console.log('Sending payload to updateProduct:', payload);
+      const response = await updateProduct(payload);
+      // console.log('API response:', response);
+      setSuccessModalVisible(true);
+      setSelectedTests([]);
+      setNotes('');
+    } catch (err) {
+      console.log('API error:', err);
+      alert('Failed to place order.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header 
         title="Order Tests" 
-        onBack={() => navigation?.goBack()} 
+        onBack={() => router.back()} 
       />
 
       <ScrollView 
@@ -272,13 +347,19 @@ const TestPicker = ({ navigation }) => {
           </View>
           <PrimaryButton 
             style={styles.orderButton}
-            onPress={() => {}}
+            onPress={handleOrderTests}
             icon="paper-plane-outline"
           >
             Order Tests
           </PrimaryButton>
         </View>
       )}
+
+      <SuccessModal
+        visible={successModalVisible}
+        onClose={() => setSuccessModalVisible(false)}
+        message="Order placed successfully!"
+      />
     </SafeAreaView>
   );
 };

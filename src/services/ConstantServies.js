@@ -81,4 +81,7 @@ export const getVariationNameListURL = async () => {
   const db_name = await getDbName();
   return `${newEndpoint2}/variation_name_list/${db_name}/`;
 }
-
+export const updateProductURL = async () => {
+  const db_name = await getDbName();
+  return `${newEndpoint2}/update_task_interest/${db_name}/`;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, TextInput } from 'react-native';
 import ProgressBar from '../components/ProgressBar';
 import AppointmentCard from '../components/AppointmentCard';
@@ -10,11 +10,13 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Drawer from '../components/Drawer';
 import { useIsFocused } from '@react-navigation/native';
+import { AppContext } from '../../context/AppContext';
 
 const defaultAvatar = require('../../assets/images/UserIcon.png');
 
 const HomeScreen = () => {
   const router = useRouter();
+  const { setCustomerId } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +174,7 @@ const HomeScreen = () => {
   }, [isFocused, fetchAppointments]);
 
   const handleSeeDetails = (appointment) => {
+    setCustomerId(appointment.customer_id);
     router.push({
       pathname: '/PatientList',
       params: {
