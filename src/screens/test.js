@@ -357,7 +357,11 @@ const TestPicker = ({ navigation }) => {
 
       <SuccessModal
         visible={successModalVisible}
-        onClose={() => setSuccessModalVisible(false)}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          // Navigate back to the previous screen (PatientDetails)
+          router.back();
+        }}
         message="Order placed successfully!"
       />
     </SafeAreaView>
