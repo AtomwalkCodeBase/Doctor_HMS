@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const SearchBar = ({ value, onChangeText, onFilterPress, style }) => (
+const SearchBar = ({ value, onChangeText, style }) => (
   <View style={[styles.container, style]}>
     <Ionicons name="search" size={20} color="#6B7280" style={styles.icon} />
     <TextInput
@@ -14,9 +14,6 @@ const SearchBar = ({ value, onChangeText, onFilterPress, style }) => (
       returnKeyType="search"
       blurOnSubmit={true}
     />
-    <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-      <Ionicons name="options" size={18} color="#fff" />
-    </TouchableOpacity>
   </View>
 );
 
@@ -46,15 +43,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#222',
     fontWeight: '500',
-  },
-  filterButton: {
-    backgroundColor: '#111',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
   },
 });
 

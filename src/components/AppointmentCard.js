@@ -1,143 +1,213 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+const defaultAvatar = require('../../assets/images/UserIcon.png');
+
+// Status color mapping
 const STATUS_COLORS = {
-  Completed: "#22C55E", // Green
-  Pending: "#F59E42",  // Orange
-  "Needs Attention": "#ffe066",
-  critical: "#ff6b6b",
-  Stable: "#8DD8FF",
-  "Round Completed": "#4ade80",
+  Completed: '#22C55E', // Green
+  Pending: '#FFB300', // Orange
+  'Needs Attention': '#ffe066', // Yellow
+  critical: '#ff6b6b', // Red
+  Stable: '#8DD8FF', // Blue
+  'Round Completed': '#4ade80', // Green
+  Scheduled: '#60A5FA', // Blue
 };
 
 const STATUS_TEXT_COLORS = {
-  Completed: "#fff",
-  Pending: "#fff",
+  Completed: '#fff',
+  Pending: '#fff',
+  'Needs Attention': '#222',
+  critical: '#fff',
+  Stable: '#222',
+  'Round Completed': '#fff',
+  Scheduled: '#fff',
 };
 
-const StatusBadge = ({ label }) => (
-  <View style={[
-    styles.statusBadge,
-    { backgroundColor: STATUS_COLORS[label] || "#eee" }
-  ]}>
-    <Text style={[
-      styles.statusBadgeText,
-      { color: STATUS_TEXT_COLORS[label] || "#222" }
-    ]}>
-      {label}
-    </Text>
-  </View>
-);
+// Helper to get the most important status for button color
+const getPrimaryStatus = (statusArr) => {
+  if (!statusArr || statusArr.length === 0) return 'Pending';
+  // Priority: critical > Needs Attention > Pending > Stable > Completed > Round Completed
+  const priority = [
+    'critical',
+    'Needs Attention',
+    'Pending',
+    'Stable',
+    'Completed',
+    'Round Completed',
+  ];
+  for (let p of priority) {
+    if (statusArr.map(s => (s || '').toLowerCase()).includes(p.toLowerCase())) {
+      return p;
+    }
+  }
+  return statusArr[0];
+};
 
-const AppointmentCard = ({ id, name, date, time, avatar, completed, onPress, status }) => (
-  <View style={styles.card}>
-    <View style={{ flex: 1 }}>
-      {/* Name Row (without Status Badge) */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+const AppointmentCard = ({ name, id, date, time, status, onPress, avatar, containerStyle }) => {
+  // Normalize status to array
+  const statusArr = Array.isArray(status) ? status : status ? [status] : ['Pending'];
+  const primaryStatus = getPrimaryStatus(statusArr);
+  const getStatusColor = (s) => STATUS_COLORS[s] || '#9E9E9E';
+  const getStatusTextColor = (s) => STATUS_TEXT_COLORS[s] || '#222';
+
+  // Card style
+  const getCardStyle = () => {
+    return [
+      styles.card,
+      { borderLeftColor: getStatusColor(primaryStatus), borderLeftWidth: 4 }
+    ];
+  };
+
+  return (
+    <View style={[getCardStyle(), containerStyle]}>
+      <View style={styles.contentContainer}>
+        {/* Patient Info */}
         <Text style={styles.name}>{name}</Text>
+        <View style={styles.idRow}>
+          <Ionicons name="person-outline" size={16} color="#757575" style={styles.idIcon} />
+          <Text style={styles.idText}>ID: {id}</Text>
+        </View>
+        {/* Date Row */}
+        <View style={styles.timeRow}>
+          <Ionicons name="calendar-outline" size={14} color="#616161" />
+          <Text style={styles.date}> {date}</Text>
+        </View>
+        {/* Time Row (only if time is provided) */}
+        {time ? (
+          <View style={styles.timeRow}>
+            <Ionicons name="time-outline" size={14} color="#616161" />
+            <Text style={styles.time}> {time}</Text>
+          </View>
+        ) : null}
+        {/* Details Button */}
+        <TouchableOpacity
+          style={[
+            styles.detailsButton,
+            { backgroundColor: '#F0F2F5' }
+          ]}
+          onPress={onPress}
+        >
+          <Text style={styles.detailsText}>See Details</Text>
+          <Ionicons name="chevron-forward" size={14} color="#111" />
+        </TouchableOpacity>
       </View>
-      {/* Patient ID */}
-      {id && (
-        <Text style={styles.idText}>ID: {id}</Text>
-      )}
-      <Text style={styles.date}>{date}</Text>
-      <Text style={styles.time}>{time}</Text>
-      <TouchableOpacity style={styles.detailsButton} onPress={onPress}>
-        <Text style={styles.detailsText}>See Details</Text>
-        <Ionicons name="chevron-forward" size={16} color="#111" style={{ marginLeft: 6 }} />
-      </TouchableOpacity>
+      {/* Avatar and Status Badges Column */}
+      <View style={styles.avatarContainer}>
+        {/* Status Badges */}
+        <View style={styles.statusBadgesRow}>
+          {statusArr.map((s, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.statusContainer,
+                { backgroundColor: getStatusColor(s) }
+              ]}
+            >
+              <Text style={[styles.statusText, { color: getStatusTextColor(s) }]}>{String(s).toUpperCase()}</Text>
+            </View>
+          ))}
+        </View>
+        <Image
+          source={avatar || defaultAvatar}
+          style={styles.avatar}
+        />
+      </View>
     </View>
-    {/* Avatar and Status Badge Column */}
-    <View style={styles.avatarColumn}>
-      {status && Array.isArray(status) && status.length > 0 && (
-        <StatusBadge label={status[0]} />
-      )}
-      <Image source={avatar} style={styles.avatar} />
-    </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
+    marginBottom: 16,
     marginHorizontal: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  avatarContainer: {
+    marginLeft: 16,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    minWidth: 160,
+  },
+  statusBadgesRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  statusContainer: {
+    alignSelf: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginHorizontal: 2,
+    marginBottom: 0,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   name: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 0,
-    color: '#111',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#212121',
+    marginBottom: 3,
   },
-  idText: {
-    fontSize: 13,
-    color: '#888',
-    marginBottom: 0,
-  },
-  date: {
-    color: '#6B7280',
-    fontSize: 14,
-    marginBottom: 0,
-  },
-  time: {
-    color: '#6B7280',
-    fontSize: 14,
-    marginBottom: 0,
-  },
-  detailsButton: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+  idRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    marginBottom: 3,
+  },
+  idIcon: {
+    marginRight: 4,
+  },
+  idText: {
+    fontSize: 14,
+    color: '#757575',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  date: {
+    fontSize: 15,
+    color: '#616161',
+  },
+  time: {
+    fontSize: 15,
+    color: '#616161',
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    marginTop: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 7,
+    marginTop: 8,
   },
   detailsText: {
     color: '#111',
-    fontWeight: '600',
-    fontSize: 15,
+    fontWeight: '500',
+    fontSize: 16,
+    marginRight: 4,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 20,
-    marginLeft: 24,
     backgroundColor: '#f5e3d7',
-  },
-  avatarColumn: {
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    marginLeft: 24,
-  },
-  statusBadge: {
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    alignSelf: "flex-end",
-    marginLeft: 'auto',
-    marginBottom: 8,
-    marginTop: -6,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  statusBadgeText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    letterSpacing: 0.2,
-    textAlign: 'center',
   },
 });
 

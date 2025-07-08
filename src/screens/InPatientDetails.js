@@ -217,7 +217,7 @@ const InPatientDetails = () => {
                   onPress={handleAddNote}
                   icon="create-outline"
                 >
-                  Add Note
+                  Add Notes
                 </PrimaryButton>
               </View>
 
@@ -321,41 +321,29 @@ const InPatientDetails = () => {
         animationType="fade"
         onRequestClose={() => setAddNoteModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Clinical Note</Text>
-              <TouchableOpacity 
-                style={styles.modalCloseButton}
-                onPress={() => setAddNoteModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-            
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View style={{ width: '88%', maxWidth: 360, backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center' }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: '#222' }}>Add Notes</Text>
             <NoteInput
-              style={styles.noteInput}
-              placeholder="Enter your clinical notes here..."
+              style={{ width: '100%', minHeight: 100, marginBottom: 18 }}
+              placeholder="Write your note here..."
               value={noteText}
               onChangeText={setNoteText}
-              multiline
-              numberOfLines={5}
             />
-
-            <View style={styles.modalButtons}>
-              <OutlinedButton
-                style={styles.cancelButton}
-                onPress={() => setAddNoteModalVisible(false)}
-              >
-                Cancel
-              </OutlinedButton>
-              <PrimaryButton
-                style={styles.submitButton}
-                onPress={handleSubmitNote}
-              >
-                Save Note
-              </PrimaryButton>
-            </View>
+            <PrimaryButton
+              style={{ width: '100%', height: 48, borderRadius: 12, backgroundColor: '#0366D6', justifyContent: 'center', alignItems: 'center' }}
+              textStyle={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}
+              onPress={handleSubmitNote}
+            >
+              Submit
+            </PrimaryButton>
+            <OutlinedButton
+              style={{ width: '100%', height: 44, borderRadius: 12, marginTop: 10, backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center' }}
+              textStyle={{ color: '#222', fontSize: 16, fontWeight: 'bold' }}
+              onPress={() => setAddNoteModalVisible(false)}
+            >
+              Cancel
+            </OutlinedButton>
           </View>
         </View>
       </Modal>
@@ -629,65 +617,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    width: '100%',
-    maxWidth: 500,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  modalCloseButton: {
-    padding: 4,
-  },
-  noteInput: {
-    minHeight: 150,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    textAlignVertical: 'top',
-    fontSize: 15,
-    color: '#1E293B',
-    backgroundColor: '#F8FAFC',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  cancelButton: {
-    width: 120,
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-  },
-  submitButton: {
-    width: 120,
-  },
+
 });
 
 export default InPatientDetails;

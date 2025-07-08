@@ -204,7 +204,7 @@ const InPatientScreen = () => {
       {tab === 'Surgery' && (
         <>
           {/* Search + Calendar Row */}
-          <View style={[styles.searchRow, { alignItems: 'center', marginBottom: 10, minHeight: 48, paddingTop: 16 }]}>
+          <View style={[styles.searchRow, { alignItems: 'center', marginBottom: 10, minHeight: 48, paddingTop: 16 }]}> 
             <View style={{ flex: 2, marginRight: 10 }}>
               <SearchBar
                 value={search}
@@ -231,37 +231,16 @@ const InPatientScreen = () => {
                 (!selectedDate || (item.date && item.date.toDateString() === selectedDate.toDateString()))
               )
               .map((item) => (
-                <View key={item.id} style={{ marginHorizontal: 16, marginBottom: 18 }}>
-                  <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#222', marginBottom: 2 }}>{item.name}</Text>
-                      <Text style={{ color: '#6B7280', fontSize: 15, marginBottom: 2 }}>{item.surgery} | {item.time} | {item.ot}</Text>
-                      <TouchableOpacity
-                        style={{ backgroundColor: '#F3F4F6', borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 18, alignSelf: 'flex-start', marginTop: 10 }}
-                        onPress={() => router.push({ pathname: '/SurgeryDetails', params: { name: item.name, status: item.status, details: '35, Male · Bed 201, Ward A', avatar: item.avatar, procedure: 'Appedectomy', notes: 'Patient has acute appendicitis. Prepare for laparoscopic surgery.', surgeryType: 'Laparoscopic', category: 'Emergency', attachments: JSON.stringify([{ name: 'Lab Results.pdf' }, { name: 'Imaging Report.pdf' }]) } })}
-                      >
-                        <Text style={{ color: '#111', fontWeight: '600', fontSize: 15 }}>View Case</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#111" style={{ marginLeft: 6 }} />
-                      </TouchableOpacity>
-                    </View>
-                    <View style={{ marginLeft: 18, alignItems: 'center' }}>
-                      {/* Status badge above image */}
-                      <View style={{
-                        backgroundColor: item.status === 'Completed' ? '#22C55E' : '#E5E7EB',
-                        borderRadius: 12,
-                        paddingHorizontal: 14,
-                        paddingVertical: 4,
-                        marginBottom: 8,
-                        minWidth: 80,
-                        alignItems: 'center',
-                      }}>
-                        <Text style={{ color: item.status === 'Completed' ? '#fff' : '#222', fontWeight: 'bold', fontSize: 13, textAlign: 'center' }}>{item.status}</Text>
-                      </View>
-                      <View style={{ borderRadius: 16, overflow: 'hidden' }}>
-                        <Image source={item.avatar} style={{ width: 80, height: 80, borderRadius: 16, backgroundColor: '#f2f2f2' }} />
-                      </View>
-                    </View>
-                  </View>
+                <View key={item.id} style={styles.patientCardWrapper}>
+                  <AppointmentCard
+                    id={item.id}
+                    name={item.name}
+                    date={`${item.surgery} | ${item.ot}`}
+                    time={item.time}
+                    avatar={item.avatar}
+                    status={[item.status]}
+                    onPress={() => router.push({ pathname: '/SurgeryDetails', params: { name: item.name, status: item.status, details: '35, Male · Bed 201, Ward A', avatar: item.avatar, procedure: 'Appedectomy', notes: 'Patient has acute appendicitis. Prepare for laparoscopic surgery.', surgeryType: 'Laparoscopic', category: 'Emergency', attachments: JSON.stringify([{ name: 'Lab Results.pdf' }, { name: 'Imaging Report.pdf' }]) } })}
+                  />
                 </View>
               ))}
           </ScrollView>

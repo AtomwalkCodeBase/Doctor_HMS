@@ -229,9 +229,6 @@ const HomeScreen = () => {
               onChangeText={setSearch}
               placeholderTextColor="#6B7280"
             />
-            <TouchableOpacity style={styles.filterButton} onPress={() => {}}>
-              <Ionicons name="options" size={18} color="#fff" />
-            </TouchableOpacity>
           </View>
         </View>
       </View>
