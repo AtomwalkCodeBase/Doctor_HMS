@@ -16,6 +16,7 @@ const AppProvider = ({ children }) => {
     const [dbName, setDbName] = useState(null);
     const [isConnected, setIsConnected] = useState(true);
     const [customerId, setCustomerId] = useState(null);
+    const [employeeId, setEmployeeId] = useState(null); // Add employeeId state
 
     const router = useRouter();
 
@@ -85,6 +86,7 @@ const AppProvider = ({ children }) => {
               await AsyncStorage.setItem('eId', String(e_id));
               await AsyncStorage.setItem('mobileNumber', username);
               await AsyncStorage.setItem('userPin', password);
+              setEmployeeId(emp_id); // Set employeeId in state
                 }
 
                 router.replace({ pathname: 'home' });
@@ -161,12 +163,14 @@ const AppProvider = ({ children }) => {
                 companyInfo,
                 dbName,
                 loginType,
-                identifier
+                identifier,
+                empId
             ] = await Promise.all([
                 AsyncStorage.getItem('companyInfo'),
                 AsyncStorage.getItem('dbName'),
                 AsyncStorage.getItem('loginType'),
-                AsyncStorage.getItem(loginType === 'mobile' ? 'mobileNumber' : 'empId')
+                AsyncStorage.getItem(loginType === 'mobile' ? 'mobileNumber' : 'empId'),
+                AsyncStorage.getItem('empId'), // Get empId
             ]);
 
             if (companyInfo) {
@@ -174,6 +178,9 @@ const AppProvider = ({ children }) => {
             }
             if (dbName) {
                 setDbName(dbName);
+            }
+            if (empId) {
+                setEmployeeId(empId); // Set employeeId in state
             }
         } catch (e) {
             console.log('Login Status Error:', e);
@@ -199,6 +206,8 @@ const AppProvider = ({ children }) => {
             setIsLoading,
             customerId,
             setCustomerId,
+            employeeId, // Expose employeeId
+            setEmployeeId, // Expose setter if needed
         }}>
             {children}
             <NetworkErrorModal 

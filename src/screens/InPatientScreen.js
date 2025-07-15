@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SearchBar from "../components/SearchBar";
@@ -9,6 +9,8 @@ import CustomStatusBar from "../components/StatusBar";
 import DropdownPicker from "../components/DropdownPicker";
 import { useRouter } from "expo-router";
 import DatePickerField from "../components/DatePickerField";
+import { AppContext } from "../../context/AppContext";
+import { getInPatientList } from "../services/productServices";
 
 const STATUS_COLORS = {
   "Needs Attention": "#ffe066",
@@ -16,63 +18,6 @@ const STATUS_COLORS = {
   Stable: "#8DD8FF",
   "Round Completed": "#4ade80",
 };
-
-const patientsData = [
-  {
-    id: 23454,
-    status: ["Needs Attention"],
-    name: "Roshni Singh, 45 yrs. F",
-    bed: "Bed 201, Ward B",
-    ward: "ward_b",
-    avatar: require("../../assets/images/UserIcon.png"),
-    completed: false,
-  },
-  {
-    id: 23455,
-    status: ["critical"],
-    name: "Roshan Singh, 29 yrs. M",
-    bed: "Bed 202, Ward B",
-    ward: "ward_b",
-    avatar: require("../../assets/images/UserIcon.png"),
-    completed: false,
-  },
-  {
-    id: 23456,
-    status: ["Stable", "Round Completed"],
-    name: "Yuvraj Singh, 29 yrs. M",
-    bed: "Bed 203, Ward B",
-    ward: "ward_b",
-    avatar: require("../../assets/images/UserIcon.png"),
-    completed: false,
-  },
-  {
-    id: 23457,
-    status: ["Stable"],
-    name: "Priya Sharma, 32 yrs. F",
-    bed: "Bed 101, Ward A",
-    ward: "ward_a",
-    avatar: require("../../assets/images/UserIcon.png"),
-    completed: false,
-  },
-  {
-    id: 23458,
-    status: ["Needs Attention"],
-    name: "Amit Patel, 28 yrs. M",
-    bed: "Bed 102, Ward A",
-    ward: "ward_a",
-    avatar: require("../../assets/images/UserIcon.png"),
-    completed: false,
-  },
-  {
-    id: 23459,
-    status: ["critical"],
-    name: "Sneha Reddy, 35 yrs. F",
-    bed: "Bed 301, Ward C",
-    ward: "ward_c",
-    avatar: require("../../assets/images/UserIcon.png"),
-    completed: false,
-  },
-];
 
 const surgeryData = [
   {
@@ -115,10 +60,14 @@ const StatusBadge = ({ label }) => (
 
 const InPatientScreen = () => {
   const router = useRouter();
+  const { employeeId } = useContext(AppContext);
   const [tab, setTab] = useState("Patients");
   const [search, setSearch] = useState("");
   const [ward, setWard] = useState("all");
   const [selectedDate, setSelectedDate] = useState(new Date(2025, 0, 8));
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const wardOptions = [
     { label: "Select", value: "all" },
     { label: "Ward A", value: "ward_a" },
@@ -127,8 +76,41 @@ const InPatientScreen = () => {
     { label: "Ward D", value: "ward_d" },
   ];
 
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (!employeeId) return;
+      setLoading(true);
+      try {
+        const response = await getInPatientList();
+        // Assume response.data is the array
+        const filtered = (response.data || []).filter(
+          (item) =>
+            item.additional_fld_list &&
+            item.additional_fld_list.includes(employeeId)
+        );
+        // Map to patient card format, keep other fields hardcoded
+        const mapped = filtered.map((item, idx) => ({
+          id: item.id,
+          name: item.title,
+          bed: "Bed 201, Ward B", // hardcoded for now
+          ward: "ward_b", // hardcoded for now
+          avatar: require("../../assets/images/UserIcon.png"),
+          status: ["Stable"], // hardcoded for now
+          completed: false,
+          start_date: item.start_date,
+        }));
+        setPatients(mapped);
+      } catch (e) {
+        setPatients([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPatients();
+  }, [employeeId]);
+
   // Filter patients based on search and ward
-  const filteredPatients = patientsData.filter(patient => {
+  const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(search.toLowerCase());
     const matchesWard = ward === "all" || patient.ward === ward;
     return matchesSearch && matchesWard;
@@ -158,7 +140,7 @@ const InPatientScreen = () => {
       {tab === 'Patients' && (
         <>
           {/* ProgressBar just below subtab */}
-          <ProgressBar completed={2} total={10} />
+          <ProgressBar completed={filteredPatients.length} total={10} />
 
           {/* Search + Filter Row */}
           <View style={styles.searchRow}>
@@ -171,7 +153,7 @@ const InPatientScreen = () => {
                 inputStyle={{ fontSize: 15 }}
               />
             </View>
-            <View style={[{ width: 110, marginTop: 2 }]}>
+            <View style={[{ width: 110, marginTop: 2 }]}> 
               <DropdownPicker
                 data={wardOptions}
                 value={ward}
@@ -182,22 +164,28 @@ const InPatientScreen = () => {
           </View>
 
           {/* Patient Cards List */}
-          <ScrollView contentContainerStyle={{ padding: 0, paddingBottom: 32 }}>
-            {filteredPatients.map((patient) => (
-              <View key={patient.id} style={styles.patientCardWrapper}>
-                <AppointmentCard
-                  id={patient.id}
-                  name={patient.name}
-                  date={patient.bed}
-                  time={null}
-                  avatar={patient.avatar}
-                  completed={patient.completed}
-                  onPress={() => router.push('/InPatientDetails')}
-                  status={patient.status}
-                />
-              </View>
-            ))}
-          </ScrollView>
+          {loading ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40 }}>
+              <Text>Loading...</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={{ padding: 0, paddingBottom: 32 }}>
+              {filteredPatients.map((patient) => (
+                <View key={patient.id} style={styles.patientCardWrapper}>
+                  <AppointmentCard
+                    id={patient.id}
+                    name={patient.name}
+                    date={patient.bed}
+                    time={patient.start_date}
+                    avatar={patient.avatar}
+                    completed={patient.completed}
+                    onPress={() => router.push('/InPatientDetails')}
+                    status={patient.status}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </>
       )}
 

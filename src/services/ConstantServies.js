@@ -85,3 +85,7 @@ export const updateProductURL = async () => {
   const db_name = await getDbName();
   return `${newEndpoint2}/update_task_interest/${db_name}/`;
 }
+export const getInPatientListURL = async () => {
+  const db_name = await getDbName();
+  return `${newEndpoint}/get_project_list/${db_name}/`;
+}

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getActivities, userTaskListURL, empLoginURL, updateTaskURL, setUserPinURL, forgetEmpPinURL, getbookedList, processbookingdata, uploadDocumentURL, getProductCategoryListURL, getVariationNameListURL, updateProductURL } from "../services/ConstantServies";
+import { getActivities, userTaskListURL, empLoginURL, updateTaskURL, setUserPinURL, forgetEmpPinURL, getbookedList, processbookingdata, uploadDocumentURL, getProductCategoryListURL, getVariationNameListURL, updateProductURL, getInPatientListURL } from "../services/ConstantServies";
 import { authAxios, authAxiosPost, publicAxiosRequest, authAxiosFilePost } from "./HttpMethod";
 
 export async function getUserTasks(task_type, customer_id, lead_id) {
@@ -126,4 +126,9 @@ export async function getVariationNameList() {
 export async function updateProduct(task_interest_data) {
   const url = await updateProductURL();
   return authAxiosPost(url, { task_interest_data });
+}
+
+export async function getInPatientList() {
+  const url = await getInPatientListURL();
+  return authAxios(url);
 }
